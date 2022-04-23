@@ -1,0 +1,8 @@
+dist
+build
+.git
+**/*.env
+node_modules
+test
+githooks
+example

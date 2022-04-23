@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# fail if anything errors (including pipes)
+set -e
+set -o pipefail
+
+# cd to script folder then up 1 dir
+cd "$(cd $(dirname $0) && pwd)/.."
+
+# lint or fail
+npm run lint
+
+# tests must pass
+npm test
+
+# docker must build
+docker build --force-rm --tag $(basename $PWD):dev .
+
+echo -e '\033[32;1mpassed\033[0;0m'

@@ -1,0 +1,16 @@
+{
+  "json-b-test": {
+    "get": {
+      "status": 200
+    }
+  },
+  "json-b-test/users/something": {
+    "delete": {
+      "status": 405,
+      "body": "<!DOCTYPE html><html><head><title>Nope</title></head><body><h1>405 Method not allowed</h1></body><html>",
+      "headers": {
+        "Content-Type": "text/html"
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  /* https://github.com/tsconfig/bases/blob/main/bases/node16.json */
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "outDir": "./dist",
+    "resolveJsonModule": true,
+    "rootDir": ".",
+    "sourceMap": true,
+    "strictNullChecks": false
+  },
+  "include": [
+    "src",
+    "src/**/*.json",
+    "example",
+    "test",
+    "test/**/*.json"
+  ],
+}
