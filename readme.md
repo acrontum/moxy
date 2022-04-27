@@ -69,7 +69,7 @@ services:
     ports:
       - 8443:80
     init: true
-    command: --allowHttpRouteConfig
+    command: --allowHttpRouteConfig --route /opt/routes
 ```
 
 ## API
@@ -306,7 +306,7 @@ If you instead loaded the `a` folder, it would look like:
 
 example config:  
 ```typescript
-import { HandlerVariables, MoxyRequest, MoxyResponse, Routes } from '../../src';
+import { HandlerVariables, MoxyRequest, MoxyResponse, Routes } from '@acrontum/moxy';
 
 export const routeConfig: Routes = {
   // example using basic path params and replacements.
@@ -400,7 +400,6 @@ export const routeConfig: Routes = {
     }
   }
 };
-
 ```
 
 ## Static files
