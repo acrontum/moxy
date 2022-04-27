@@ -13,13 +13,13 @@ Simple mock / proxy server.
 - [API](#api)
 - [CLI options](#cli-options)
 - [HTTP API](#http-api)
-  - [GET /\_moxy:](#get-%5C_moxy)
-  - [GET /\_moxy/routes](#get-%5C_moxyroutes)
-  - [GET /\_moxy/router](#get-%5C_moxyrouter)
-  - [POST /\_moxy/router](#post-%5C_moxyrouter)
-  - [PATCH /\_moxy/router/:route](#patch-%5C_moxyrouterroute)
-  - [PUT /\_moxy/router/:route](#put-%5C_moxyrouterroute)
-  - [DELETE /\_moxy/router/:route](#delete-%5C_moxyrouterroute)
+  - [GET /\_moxy:](#get-_moxy)
+  - [GET /\_moxy/routes](#get-_moxyroutes)
+  - [GET /\_moxy/router](#get-_moxyrouter)
+  - [POST /\_moxy/router](#post-_moxyrouter)
+  - [PATCH /\_moxy/router/:route](#patch-_moxyrouterroute)
+  - [PUT /\_moxy/router/:route](#put-_moxyrouterroute)
+  - [DELETE /\_moxy/router/:route](#delete-_moxyrouterroute)
 - [Modifying shared routes](#modifying-shared-routes)
 - [Static files](#static-files)
 
@@ -51,7 +51,7 @@ npx @acrontum/moxy --help
 ### Docker
 
 ```bash
-docker run --detatch --mount ./routes:/opt/routes:ro acrontum/moxy -- --port 1234 --route /opt/routes
+docker run --rm --name moxy --detach --interactive --tty --publish 1234:1234 --mount type=bind,src=$PWD/routes,dst=/opt/routes,ro acrontum/moxy --port 1234 --route /opt/routes
 ```
 
 or with docker-compose
