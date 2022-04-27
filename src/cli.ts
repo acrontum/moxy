@@ -28,6 +28,8 @@ export const getOption = (argv?: string[]): number => {
   const arg = argv.shift();
 
   switch (arg) {
+    case '--':
+      return 0;
     case '-h':
     case '--help':
       process.stdout.write(usage);
@@ -70,7 +72,7 @@ export const main = async (argv?: string[]): Promise<MoxyServer> => {
 
   const parsedPort = parseInt(port, 10);
   if (Number.isNaN(parsedPort) || parsedPort < 0 || parsedPort > 65535) {
-    throw new Error(`Error: invalid port ${port}`);
+    throw new Error(`Error: invalid port ${port}\n`);
   }
 
   const moxyServer = new MoxyServer(options);
