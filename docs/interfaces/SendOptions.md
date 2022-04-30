@@ -17,7 +17,7 @@
 
 #### Defined in
 
-[server/response.ts:7](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L7)
+[server/response.ts:7](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L7)
 
 ___
 
@@ -27,4 +27,4 @@ ___
 
 #### Defined in
 
-[server/response.ts:8](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L8)
+[server/response.ts:8](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L8)

@@ -31,7 +31,7 @@ response payload
 
 #### Defined in
 
-[router/index.ts:47](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L47)
+[router/index.ts:47](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L47)
 
 ___
 
@@ -47,7 +47,7 @@ Method-level delay (in milliseconds)
 
 #### Defined in
 
-[router/index.ts:32](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L32)
+[router/index.ts:32](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L32)
 
 ___
 
@@ -63,7 +63,7 @@ If true, will not parse route as regex
 
 #### Defined in
 
-[router/index.ts:36](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L36)
+[router/index.ts:36](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L36)
 
 ___
 
@@ -75,7 +75,7 @@ HTTP request handler function
 
 #### Defined in
 
-[router/index.ts:55](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L55)
+[router/index.ts:55](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L55)
 
 ___
 
@@ -87,7 +87,7 @@ headers to add (Content-Type is added automatically)
 
 #### Defined in
 
-[router/index.ts:51](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L51)
+[router/index.ts:51](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L51)
 
 ___
 
@@ -103,7 +103,7 @@ If set, will proxy all requests to the target
 
 #### Defined in
 
-[router/index.ts:24](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L24)
+[router/index.ts:24](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L24)
 
 ___
 
@@ -119,7 +119,7 @@ Options to pass through proxy
 
 #### Defined in
 
-[router/index.ts:28](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L28)
+[router/index.ts:28](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L28)
 
 ___
 
@@ -131,4 +131,4 @@ status code to return (defaults to 200)
 
 #### Defined in
 
-[router/index.ts:43](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L43)
+[router/index.ts:43](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L43)

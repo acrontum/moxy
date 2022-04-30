@@ -50,7 +50,7 @@ IncomingMessage.constructor
 
 #### Defined in
 
-[server/request.ts:24](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L24)
+[server/request.ts:24](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L24)
 
 ## Properties
 
@@ -60,7 +60,7 @@ IncomingMessage.constructor
 
 #### Defined in
 
-[server/request.ts:22](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L22)
+[server/request.ts:22](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L22)
 
 ___
 
@@ -70,7 +70,7 @@ ___
 
 #### Defined in
 
-[server/request.ts:21](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L21)
+[server/request.ts:21](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L21)
 
 ___
 
@@ -82,7 +82,7 @@ A promise which resolves to the request body
 
 #### Defined in
 
-[server/request.ts:11](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L11)
+[server/request.ts:11](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L11)
 
 ___
 
@@ -94,7 +94,7 @@ Unique request UUID
 
 #### Defined in
 
-[server/request.ts:15](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L15)
+[server/request.ts:15](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L15)
 
 ___
 
@@ -106,7 +106,7 @@ The unix timestamp of the request
 
 #### Defined in
 
-[server/request.ts:19](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L19)
+[server/request.ts:19](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L19)
 
 ## Accessors
 
@@ -122,7 +122,7 @@ Get the request path without hash or search
 
 #### Defined in
 
-[server/request.ts:52](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L52)
+[server/request.ts:52](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L52)
 
 ___
 
@@ -138,7 +138,7 @@ Get the parsed query params
 
 #### Defined in
 
-[server/request.ts:43](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L43)
+[server/request.ts:43](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L43)
 
 ## Methods
 
@@ -160,7 +160,7 @@ Gets the body
 
 #### Defined in
 
-[server/request.ts:61](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L61)
+[server/request.ts:61](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L61)
 
 ▸ **getBody**(`format`): `Promise`<`string`\>
 
@@ -176,7 +176,7 @@ Gets the body
 
 #### Defined in
 
-[server/request.ts:62](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L62)
+[server/request.ts:62](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L62)
 
 ▸ **getBody**(`format`): `Promise`<`Record`<`string`, `any`\>\>
 
@@ -192,7 +192,7 @@ Gets the body
 
 #### Defined in
 
-[server/request.ts:63](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L63)
+[server/request.ts:63](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L63)
 
 ___
 
@@ -214,4 +214,4 @@ Parse the body using conten-type header
 
 #### Defined in
 
-[server/request.ts:85](https://github.com/acrontum/moxy/blob/09d4c53/src/server/request.ts#L85)
+[server/request.ts:85](https://github.com/acrontum/moxy/blob/527f192/src/server/request.ts#L85)

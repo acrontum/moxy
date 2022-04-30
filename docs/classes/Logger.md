@@ -36,7 +36,7 @@
 
 #### Defined in
 
-[util/logger.ts:6](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L6)
+[util/logger.ts:6](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L6)
 
 ## Properties
 
@@ -46,7 +46,7 @@
 
 #### Defined in
 
-[util/logger.ts:4](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L4)
+[util/logger.ts:4](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L4)
 
 ## Methods
 
@@ -68,7 +68,7 @@ Same as console.debug. Will not log if level is 'error' or 'off'
 
 #### Defined in
 
-[util/logger.ts:27](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L27)
+[util/logger.ts:27](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L27)
 
 ___
 
@@ -90,7 +90,7 @@ Same as console.error. Will always log
 
 #### Defined in
 
-[util/logger.ts:41](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L41)
+[util/logger.ts:41](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L41)
 
 ___
 
@@ -112,7 +112,7 @@ Same as console.info. Will not log if level is 'error' or 'off'
 
 #### Defined in
 
-[util/logger.ts:20](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L20)
+[util/logger.ts:20](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L20)
 
 ___
 
@@ -134,7 +134,7 @@ Same as console.log. Will not log if level is 'error' or 'off'
 
 #### Defined in
 
-[util/logger.ts:13](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L13)
+[util/logger.ts:13](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L13)
 
 ___
 
@@ -155,7 +155,7 @@ ___
 
 #### Defined in
 
-[util/logger.ts:52](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L52)
+[util/logger.ts:52](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L52)
 
 ___
 
@@ -177,7 +177,7 @@ Same as console.trace. Will always log
 
 #### Defined in
 
-[util/logger.ts:48](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L48)
+[util/logger.ts:48](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L48)
 
 ___
 
@@ -199,4 +199,4 @@ Same as console.warn. Will not log if level is 'error' or 'off'
 
 #### Defined in
 
-[util/logger.ts:34](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L34)
+[util/logger.ts:34](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L34)

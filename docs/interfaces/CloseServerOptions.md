@@ -18,4 +18,4 @@ If true, will force close all sockets
 
 #### Defined in
 
-[server/moxy-server.ts:31](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L31)
+[server/moxy-server.ts:31](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L31)

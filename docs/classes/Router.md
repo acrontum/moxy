@@ -52,7 +52,7 @@
 
 #### Defined in
 
-[router/router.ts:58](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L58)
+[router/router.ts:58](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L58)
 
 ## Properties
 
@@ -62,7 +62,7 @@
 
 #### Defined in
 
-[router/router.ts:56](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L56)
+[router/router.ts:56](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L56)
 
 ___
 
@@ -74,7 +74,7 @@ Entries of [router path, ParsedPathConfig] for single-use routes
 
 #### Defined in
 
-[router/router.ts:50](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L50)
+[router/router.ts:50](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L50)
 
 ___
 
@@ -86,7 +86,7 @@ Router config options
 
 #### Defined in
 
-[router/router.ts:54](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L54)
+[router/router.ts:54](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L54)
 
 ___
 
@@ -98,7 +98,7 @@ Entries of [router path, ParsedPathConfig]
 
 #### Defined in
 
-[router/router.ts:42](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L42)
+[router/router.ts:42](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L42)
 
 ___
 
@@ -110,7 +110,7 @@ Path-keyed router route config object
 
 #### Defined in
 
-[router/router.ts:46](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L46)
+[router/router.ts:46](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L46)
 
 ## Methods
 
@@ -136,7 +136,7 @@ The parsed path configuration
 
 #### Defined in
 
-[router/router.ts:254](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L254)
+[router/router.ts:254](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L254)
 
 ___
 
@@ -161,7 +161,7 @@ Creates a route config
 
 #### Defined in
 
-[router/router.ts:343](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L343)
+[router/router.ts:343](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L343)
 
 ___
 
@@ -185,7 +185,7 @@ Creates or replaces a route config
 
 #### Defined in
 
-[router/router.ts:381](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L381)
+[router/router.ts:381](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L381)
 
 ___
 
@@ -208,7 +208,7 @@ Removes a route config
 
 #### Defined in
 
-[router/router.ts:402](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L402)
+[router/router.ts:402](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L402)
 
 ___
 
@@ -230,7 +230,7 @@ Determines whether the specified path is router file
 
 #### Defined in
 
-[router/router.ts:276](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L276)
+[router/router.ts:276](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L276)
 
 ___
 
@@ -252,7 +252,7 @@ Hides parsed regex from response
 
 #### Defined in
 
-[router/router.ts:416](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L416)
+[router/router.ts:416](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L416)
 
 ___
 
@@ -274,7 +274,7 @@ Sends an api root response
 
 #### Defined in
 
-[router/router.ts:287](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L287)
+[router/router.ts:287](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L287)
 
 ___
 
@@ -297,7 +297,7 @@ Sends the current router config
 
 #### Defined in
 
-[router/router.ts:327](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L327)
+[router/router.ts:327](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L327)
 
 ___
 
@@ -320,7 +320,7 @@ Sends api router keys
 
 #### Defined in
 
-[router/router.ts:313](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L313)
+[router/router.ts:313](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L313)
 
 ___
 
@@ -344,7 +344,7 @@ Updates an existing route config
 
 #### Defined in
 
-[router/router.ts:363](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L363)
+[router/router.ts:363](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L363)
 
 ___
 
@@ -368,7 +368,7 @@ Adds a route
 
 #### Defined in
 
-[router/router.ts:72](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L72)
+[router/router.ts:72](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L72)
 
 ___
 
@@ -392,7 +392,7 @@ Adds many routes
 
 #### Defined in
 
-[router/router.ts:103](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L103)
+[router/router.ts:103](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L103)
 
 ___
 
@@ -414,7 +414,7 @@ Recursively search the folder at <path> for files matching <anything>.routes.js(
 
 #### Defined in
 
-[router/router.ts:130](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L130)
+[router/router.ts:130](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L130)
 
 ___
 
@@ -438,7 +438,7 @@ Gets the folder contents
 
 #### Defined in
 
-[router/router.ts:158](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L158)
+[router/router.ts:158](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L158)
 
 ___
 
@@ -461,7 +461,7 @@ Handle requests to api routes (/_moxy)
 
 #### Defined in
 
-[router/router.ts:207](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L207)
+[router/router.ts:207](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L207)
 
 ___
 
@@ -484,7 +484,7 @@ Loads a configuration from file
 
 #### Defined in
 
-[router/router.ts:174](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L174)
+[router/router.ts:174](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L174)
 
 ___
 
@@ -506,7 +506,7 @@ Removes a route
 
 #### Defined in
 
-[router/router.ts:116](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L116)
+[router/router.ts:116](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L116)
 
 ___
 
@@ -529,4 +529,4 @@ Server request listener
 
 #### Defined in
 
-[router/router.ts:195](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L195)
+[router/router.ts:195](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L195)

@@ -37,7 +37,7 @@
 
 #### Defined in
 
-[router/router-net.ts:23](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L23)
+[router/router-net.ts:23](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L23)
 
 ## Properties
 
@@ -47,7 +47,7 @@
 
 #### Defined in
 
-[router/router-net.ts:21](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L21)
+[router/router-net.ts:21](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L21)
 
 ___
 
@@ -57,7 +57,7 @@ ___
 
 #### Defined in
 
-[router/router-net.ts:20](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L20)
+[router/router-net.ts:20](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L20)
 
 ## Methods
 
@@ -80,7 +80,7 @@ Replace params in payload with those from url placeholders
 
 #### Defined in
 
-[router/router-net.ts:245](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L245)
+[router/router-net.ts:245](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L245)
 
 ___
 
@@ -105,7 +105,7 @@ Parse and response to configured route
 
 #### Defined in
 
-[router/router-net.ts:209](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L209)
+[router/router-net.ts:209](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L209)
 
 ___
 
@@ -130,7 +130,7 @@ Creates a simple opaque proxy
 
 #### Defined in
 
-[router/router-net.ts:36](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L36)
+[router/router-net.ts:36](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L36)
 
 ___
 
@@ -152,7 +152,7 @@ Convert simple replacement params into regex match groups
 
 #### Defined in
 
-[router/router-net.ts:191](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L191)
+[router/router-net.ts:191](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L191)
 
 ___
 
@@ -175,7 +175,7 @@ Server request listener
 
 #### Defined in
 
-[router/router-net.ts:72](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L72)
+[router/router-net.ts:72](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L72)
 
 ___
 
@@ -200,4 +200,4 @@ Handles server request based on path config
 
 #### Defined in
 
-[router/router-net.ts:124](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router-net.ts#L124)
+[router/router-net.ts:124](https://github.com/acrontum/moxy/blob/527f192/src/router/router-net.ts#L124)

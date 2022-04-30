@@ -18,4 +18,4 @@ If true, exposes CRUD routes for path config
 
 #### Defined in
 
-[router/router.ts:18](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L18)
+[router/router.ts:18](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L18)

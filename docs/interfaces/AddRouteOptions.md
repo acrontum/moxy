@@ -19,7 +19,7 @@ If true, url is not parsed as regex
 
 #### Defined in
 
-[router/router.ts:29](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L29)
+[router/router.ts:29](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L29)
 
 ___
 
@@ -31,4 +31,4 @@ If true, route is deleted when used
 
 #### Defined in
 
-[router/router.ts:25](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L25)
+[router/router.ts:25](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L25)

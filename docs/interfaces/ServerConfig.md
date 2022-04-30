@@ -19,7 +19,7 @@ Set log level
 
 #### Defined in
 
-[server/moxy-server.ts:20](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L20)
+[server/moxy-server.ts:20](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L20)
 
 ___
 
@@ -31,4 +31,4 @@ Configuration passed to router
 
 #### Defined in
 
-[server/moxy-server.ts:24](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L24)
+[server/moxy-server.ts:24](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L24)

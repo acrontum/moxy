@@ -52,7 +52,7 @@ ServerResponse.constructor
 
 #### Defined in
 
-[server/response.ts:23](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L23)
+[server/response.ts:23](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L23)
 
 ## Properties
 
@@ -62,7 +62,7 @@ ServerResponse.constructor
 
 #### Defined in
 
-[server/response.ts:21](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L21)
+[server/response.ts:21](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L21)
 
 ___
 
@@ -74,7 +74,7 @@ Request duration in ms
 
 #### Defined in
 
-[server/response.ts:19](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L19)
+[server/response.ts:19](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L19)
 
 ___
 
@@ -86,7 +86,7 @@ Unique request UUID
 
 #### Defined in
 
-[server/response.ts:15](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L15)
+[server/response.ts:15](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L15)
 
 ## Accessors
 
@@ -102,7 +102,7 @@ The response body
 
 #### Defined in
 
-[server/response.ts:38](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L38)
+[server/response.ts:38](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L38)
 
 ## Methods
 
@@ -128,7 +128,7 @@ ServerResponse.end
 
 #### Defined in
 
-[server/response.ts:176](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L176)
+[server/response.ts:176](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L176)
 
 ___
 
@@ -150,7 +150,7 @@ Gets the content type from file extention
 
 #### Defined in
 
-[server/response.ts:102](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L102)
+[server/response.ts:102](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L102)
 
 ___
 
@@ -172,7 +172,7 @@ Parse the response body based on content-type
 
 #### Defined in
 
-[server/response.ts:140](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L140)
+[server/response.ts:140](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L140)
 
 ___
 
@@ -195,7 +195,7 @@ Sends a file
 
 #### Defined in
 
-[server/response.ts:70](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L70)
+[server/response.ts:70](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L70)
 
 ___
 
@@ -218,7 +218,7 @@ Sends a json response
 
 #### Defined in
 
-[server/response.ts:50](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L50)
+[server/response.ts:50](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L50)
 
 ___
 
@@ -242,7 +242,7 @@ logging without calling setHeaders
 
 #### Defined in
 
-[server/response.ts:127](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L127)
+[server/response.ts:127](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L127)
 
 ___
 
@@ -269,4 +269,4 @@ ServerResponse.write
 
 #### Defined in
 
-[server/response.ts:164](https://github.com/acrontum/moxy/blob/09d4c53/src/server/response.ts#L164)
+[server/response.ts:164](https://github.com/acrontum/moxy/blob/527f192/src/server/response.ts#L164)

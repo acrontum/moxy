@@ -61,7 +61,7 @@ Path and query params
 
 #### Defined in
 
-[router/index.ts:8](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L8)
+[router/index.ts:8](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L8)
 
 ___
 
@@ -71,7 +71,7 @@ ___
 
 #### Defined in
 
-[util/logger.ts:1](https://github.com/acrontum/moxy/blob/09d4c53/src/util/logger.ts#L1)
+[util/logger.ts:1](https://github.com/acrontum/moxy/blob/527f192/src/util/logger.ts#L1)
 
 ___
 
@@ -83,7 +83,7 @@ Common http verbs
 
 #### Defined in
 
-[router/index.ts:13](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L13)
+[router/index.ts:13](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L13)
 
 ___
 
@@ -110,7 +110,7 @@ Static file:
 
 #### Defined in
 
-[router/index.ts:77](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L77)
+[router/index.ts:77](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L77)
 
 ___
 
@@ -120,7 +120,7 @@ ___
 
 #### Defined in
 
-[router/router.ts:36](https://github.com/acrontum/moxy/blob/09d4c53/src/router/router.ts#L36)
+[router/router.ts:36](https://github.com/acrontum/moxy/blob/527f192/src/router/router.ts#L36)
 
 ___
 
@@ -132,7 +132,7 @@ Configuration for a path.
 
 #### Defined in
 
-[router/index.ts:82](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L82)
+[router/index.ts:82](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L82)
 
 ___
 
@@ -160,7 +160,7 @@ Manual request handler
 
 #### Defined in
 
-[router/index.ts:18](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L18)
+[router/index.ts:18](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L18)
 
 ___
 
@@ -172,7 +172,7 @@ Configuration for a route.
 
 #### Defined in
 
-[router/index.ts:87](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L87)
+[router/index.ts:87](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L87)
 
 ___
 
@@ -184,7 +184,7 @@ Configuration for multiple routes.
 
 #### Defined in
 
-[router/index.ts:92](https://github.com/acrontum/moxy/blob/09d4c53/src/router/index.ts#L92)
+[router/index.ts:92](https://github.com/acrontum/moxy/blob/527f192/src/router/index.ts#L92)
 
 ## Variables
 
@@ -207,7 +207,7 @@ Configuration for multiple routes.
 
 #### Defined in
 
-[util/format.ts:3](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L3)
+[util/format.ts:3](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L3)
 
 ___
 
@@ -217,7 +217,7 @@ ___
 
 #### Defined in
 
-[util/format.ts:14](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L14)
+[util/format.ts:14](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L14)
 
 ## Functions
 
@@ -237,7 +237,7 @@ ___
 
 #### Defined in
 
-[util/format.ts:48](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L48)
+[util/format.ts:48](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L48)
 
 ___
 
@@ -257,7 +257,7 @@ ___
 
 #### Defined in
 
-[util/format.ts:26](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L26)
+[util/format.ts:26](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L26)
 
 ___
 
@@ -278,7 +278,7 @@ ___
 
 #### Defined in
 
-[util/format.ts:60](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L60)
+[util/format.ts:60](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L60)
 
 ___
 
@@ -299,7 +299,7 @@ ___
 
 #### Defined in
 
-[util/format.ts:70](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L70)
+[util/format.ts:70](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L70)
 
 ___
 
@@ -319,7 +319,7 @@ ___
 
 #### Defined in
 
-[util/format.ts:29](https://github.com/acrontum/moxy/blob/09d4c53/src/util/format.ts#L29)
+[util/format.ts:29](https://github.com/acrontum/moxy/blob/527f192/src/util/format.ts#L29)
 
 ___
 
@@ -339,7 +339,7 @@ ___
 
 #### Defined in
 
-[cli.ts:23](https://github.com/acrontum/moxy/blob/09d4c53/src/cli.ts#L23)
+[cli.ts:23](https://github.com/acrontum/moxy/blob/527f192/src/cli.ts#L23)
 
 ___
 
@@ -359,4 +359,4 @@ ___
 
 #### Defined in
 
-[cli.ts:70](https://github.com/acrontum/moxy/blob/09d4c53/src/cli.ts#L70)
+[cli.ts:70](https://github.com/acrontum/moxy/blob/527f192/src/cli.ts#L70)

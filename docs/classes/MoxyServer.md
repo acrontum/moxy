@@ -46,7 +46,7 @@
 
 #### Defined in
 
-[server/moxy-server.ts:47](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L47)
+[server/moxy-server.ts:47](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L47)
 
 ## Properties
 
@@ -56,7 +56,7 @@
 
 #### Defined in
 
-[server/moxy-server.ts:44](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L44)
+[server/moxy-server.ts:44](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L44)
 
 ___
 
@@ -66,7 +66,7 @@ ___
 
 #### Defined in
 
-[server/moxy-server.ts:45](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L45)
+[server/moxy-server.ts:45](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L45)
 
 ___
 
@@ -78,7 +78,7 @@ The internal router
 
 #### Defined in
 
-[server/moxy-server.ts:42](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L42)
+[server/moxy-server.ts:42](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L42)
 
 ___
 
@@ -90,7 +90,7 @@ Instance of HTTP server
 
 #### Defined in
 
-[server/moxy-server.ts:38](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L38)
+[server/moxy-server.ts:38](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L38)
 
 ## Accessors
 
@@ -106,7 +106,7 @@ Get current log level
 
 #### Defined in
 
-[server/moxy-server.ts:64](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L64)
+[server/moxy-server.ts:64](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L64)
 
 • `set` **logLevel**(`value`): `void`
 
@@ -124,7 +124,7 @@ Set current log level
 
 #### Defined in
 
-[server/moxy-server.ts:71](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L71)
+[server/moxy-server.ts:71](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L71)
 
 ___
 
@@ -140,7 +140,7 @@ The listening server port
 
 #### Defined in
 
-[server/moxy-server.ts:57](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L57)
+[server/moxy-server.ts:57](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L57)
 
 ## Methods
 
@@ -156,7 +156,7 @@ Configures connection management
 
 #### Defined in
 
-[server/moxy-server.ts:221](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L221)
+[server/moxy-server.ts:221](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L221)
 
 ___
 
@@ -178,7 +178,7 @@ Configures logging errors and returning 500
 
 #### Defined in
 
-[server/moxy-server.ts:209](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L209)
+[server/moxy-server.ts:209](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L209)
 
 ___
 
@@ -200,7 +200,7 @@ Close the HTTP server
 
 #### Defined in
 
-[server/moxy-server.ts:190](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L190)
+[server/moxy-server.ts:190](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L190)
 
 ___
 
@@ -222,7 +222,7 @@ Start the HTTP server
 
 #### Defined in
 
-[server/moxy-server.ts:153](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L153)
+[server/moxy-server.ts:153](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L153)
 
 ___
 
@@ -244,7 +244,7 @@ Remove path handler
 
 #### Defined in
 
-[server/moxy-server.ts:112](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L112)
+[server/moxy-server.ts:112](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L112)
 
 ___
 
@@ -268,7 +268,7 @@ Add path config handler
 
 #### Defined in
 
-[server/moxy-server.ts:84](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L84)
+[server/moxy-server.ts:84](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L84)
 
 ___
 
@@ -292,7 +292,7 @@ Same as calling @MoxyServer.on over Object.entries with a prefx
 
 #### Defined in
 
-[server/moxy-server.ts:99](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L99)
+[server/moxy-server.ts:99](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L99)
 
 ___
 
@@ -316,7 +316,7 @@ Add path handler which removes its self after the first response
 
 #### Defined in
 
-[server/moxy-server.ts:127](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L127)
+[server/moxy-server.ts:127](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L127)
 
 ___
 
@@ -332,4 +332,4 @@ Clear all routing config
 
 #### Defined in
 
-[server/moxy-server.ts:138](https://github.com/acrontum/moxy/blob/09d4c53/src/server/moxy-server.ts#L138)
+[server/moxy-server.ts:138](https://github.com/acrontum/moxy/blob/527f192/src/server/moxy-server.ts#L138)
