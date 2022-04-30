@@ -1,48 +1,56 @@
 import { randomUUID } from 'crypto';
 import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'http';
 import { AddressInfo, Socket } from 'net';
-import { RouteConfig, Routes } from '../routes';
-import { Logger, LogLevels, MoxyRequest, MoxyResponse, Router, RouterConfig, RouterNet } from './index';
+import {
+  AddRouteOptions,
+  Logger,
+  LogLevels,
+  MoxyRequest,
+  MoxyResponse,
+  RouteConfig,
+  Router,
+  RouterConfig,
+  Routes,
+} from '..';
 
 export interface ServerConfig {
   /**
-   * Set log level.
+   * Set log level
    */
   logging?: LogLevels;
   /**
-   * Configuration passed to router.
+   * Configuration passed to router
    */
   router?: RouterConfig;
 }
 
 export interface CloseServerOptions {
   /**
-   * If true, will force close all sockets.
+   * If true, will force close all sockets
    */
   closeConnections?: boolean;
 }
 
 export class MoxyServer {
   /**
-   * Instance of HTTP server.
+   * Instance of HTTP server
    */
   server?: Server;
   /**
-   * The internal router.
+   * The internal router
    */
   router: Router;
 
-  #routerNet: RouterNet;
   #currentResponse: MoxyResponse;
+  #logger: Logger;
 
   constructor(config?: ServerConfig) {
-    this.setLogging(process.env.MOXY_LOG || config?.logging || 'verbose');
-    this.router = new Router(config?.router);
-    this.#routerNet = new RouterNet(this.router);
+    this.#logger = new Logger(process.env.MOXY_LOG || config?.logging || 'verbose');
+    this.router = new Router(this.#logger, config?.router);
   }
 
   /**
-   * The listening server port.
+   * The listening server port
    *
    * @type {number}
    */
@@ -51,30 +59,51 @@ export class MoxyServer {
   }
 
   /**
-   * Sets the log verbosity.
-   *
-   * @param {string}  value  Log level
+   * Get current log level
    */
-  setLogging(value: string): void {
-    process.env.MOXY_LOG = value;
+  get logLevel(): string {
+    return this.#logger.level;
   }
 
   /**
-   * Add path config handler.
+   * Set current log level
+   */
+  set logLevel(value: string) {
+    this.#logger.level = value;
+  }
+
+  /**
+   * Add path config handler
    *
-   * @param  {string}       path    The path
-   * @param  {RouteConfig}  config  The configuration
+   * @param  {string}                path     The path
+   * @param  {RouteConfig}           config   The route handler config
+   * @param  {AddRouteOptions}       options  Extra router options
    *
    * @return {this}
    */
-  on(path: string, config: RouteConfig | Routes): this {
-    this.router.addRoute(path, config);
+  on(path: string, config: RouteConfig, options?: AddRouteOptions): this {
+    this.router.addRoute(path, config, options);
 
     return this;
   }
 
   /**
-   * Remove path handler.
+   * Same as calling @MoxyServer.on over Object.entries with a prefx
+   *
+   * @param  {string}           prefix   The path prefix to prepend to all routes
+   * @param  {Routes}           routes   Path suffix keyed RouteConfig
+   * @param  {AddRouteOptions}  options  Extra router options
+   *
+   * @return {this}
+   */
+  onAll(prefix: string, routes: Routes, options?: AddRouteOptions): this {
+    this.router.addRoutes(prefix, routes, options);
+
+    return this;
+  }
+
+  /**
+   * Remove path handler
    *
    * @param  {string}  path  The path
    *
@@ -87,15 +116,16 @@ export class MoxyServer {
   }
 
   /**
-   * Add path handler which removes its self after the first response.
+   * Add path handler which removes its self after the first response
    *
-   * @param  {string}       path    The path
-   * @param  {RouteConfig}  config  The configuration
+   * @param  {string}                path     The path
+   * @param  {(RouteConfig|Routes)}  config   The configuration
+   * @param  {AddRouteOptions}       options  Extra router options
    *
    * @return {this}
    */
-  once(path: string, config: RouteConfig | Routes): this {
-    this.router.addRoute(path, config, true);
+  once(path: string, config: RouteConfig | Routes, options?: AddRouteOptions): this {
+    this.router.addRoute(path, config, { ...options, once: true });
 
     return this;
   }
@@ -116,13 +146,13 @@ export class MoxyServer {
   /**
    * Start the HTTP server
    *
-   * @param  {number}           [port=0]  The port. If none spcified, will use a random port
+   * @param  {number}  [port=0]  The port. If none spcified, will use a random port
    *
    * @return {Promise<Server>}
    */
   async listen(port = 0): Promise<Server> {
     if (this.server) {
-      Logger.warn('WARN: Server already running');
+      this.#logger.warn('WARN: Server already running');
 
       return this.server;
     }
@@ -132,7 +162,7 @@ export class MoxyServer {
     this.server = createServer(options, (req: IncomingMessage, res: ServerResponse): Promise<void> => {
       this.#currentResponse = res as MoxyResponse;
 
-      return this.#routerNet
+      return this.router
         .requestListener(req as MoxyRequest, res as MoxyResponse)
         .catch((error) => this.#handleUncaughtErrors(error));
     });
@@ -143,7 +173,7 @@ export class MoxyServer {
       this.server.on('error', reject);
 
       this.server.listen(port, () => {
-        Logger.log(`moxy up :${this.port}`);
+        this.#logger.log(`moxy up :${this.port}`);
 
         return resolve(this.server);
       });
@@ -151,7 +181,7 @@ export class MoxyServer {
   }
 
   /**
-   * Close the HTTP server.
+   * Close the HTTP server
    *
    * @param  {CloseServerOptions}  options  Close server options
    *
@@ -172,12 +202,12 @@ export class MoxyServer {
   }
 
   /**
-   * { function_description }
+   * Configures logging errors and returning 500
    *
    * @param {Error}  error  The error
    */
   #handleUncaughtErrors(error: Error): void {
-    Logger.error(error);
+    this.#logger.error(error);
 
     if (this.#currentResponse && !this.#currentResponse.writableEnded) {
       this.#currentResponse.sendJson({ status: 500, error: JSON.stringify(error, Object.getOwnPropertyNames(error)) });
@@ -186,7 +216,7 @@ export class MoxyServer {
   }
 
   /**
-   * Creates a connection manager.
+   * Configures connection management
    */
   #createConnectionManager(): void {
     const connections: Record<string, Socket> = {};

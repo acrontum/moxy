@@ -6,15 +6,15 @@ import { randomUUID } from 'crypto';
 
 export class MoxyRequest extends IncomingMessage {
   /**
-   * A promise which resolves to the request body.
+   * A promise which resolves to the request body
    */
   body: Promise<Buffer>;
   /**
-   * Unique request UUID.
+   * Unique request UUID
    */
   id: string;
   /**
-   * The unix timestamp of the request.
+   * The unix timestamp of the request
    */
   timestamp: number;
 
@@ -36,7 +36,7 @@ export class MoxyRequest extends IncomingMessage {
   }
 
   /**
-   * Get the parsed query params.
+   * Get the parsed query params
    *
    * @type {ParsedUrlQuery}
    */
@@ -45,7 +45,7 @@ export class MoxyRequest extends IncomingMessage {
   }
 
   /**
-   * Get the request path without hash or search.
+   * Get the request path without hash or search
    *
    * @type {string}
    */
@@ -54,7 +54,7 @@ export class MoxyRequest extends IncomingMessage {
   }
 
   /**
-   * Gets the body.
+   * Gets the body
    *
    * @param {string}  format  The desired body format (defaults to content-type header)
    */

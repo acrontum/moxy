@@ -9,7 +9,7 @@ const updatedRouteConfig: RouteConfig = { delete: { status: 418, body: { message
 const publicRouteResponse = {
   'GET /routes?once=false': 'show router routes',
   'POST /routes?once=false': 'create route',
-  'PUT /routes/:route': 'create or update route',
+  'PUT /routes/:route': 'create or replace route',
   'PATCH /routes/:route': 'update route',
   'DELETE /routes/:route': 'delete route',
   'GET /router?once=false&serializeMethods=true': 'show router',

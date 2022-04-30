@@ -40,7 +40,7 @@ export class MoxyResponse extends ServerResponse {
   }
 
   /**
-   * Sends a json response.
+   * Sends a json response
    *
    * @param  {string|Record<string, any>}  json     The json
    * @param  {SendOptions}                 options  Reponse options
@@ -60,7 +60,7 @@ export class MoxyResponse extends ServerResponse {
   }
 
   /**
-   * Sends a file.
+   * Sends a file
    *
    * @param  {string}       filename  The json
    * @param  {SendOptions}  options   Reponse options
@@ -93,7 +93,7 @@ export class MoxyResponse extends ServerResponse {
   }
 
   /**
-   * Gets the content type from file extention.
+   * Gets the content type from file extention
    *
    * @param  {string}  filename  The filename
    *
@@ -118,9 +118,9 @@ export class MoxyResponse extends ServerResponse {
   }
 
   /**
-   * Set response headers.
+   * Set response headers
    * The writeHead method buffers headers, so they are not available for
-   * logging without calling setHeaders.
+   * logging without calling setHeaders
    *
    * @param {Record<string, string | readonly string[] | number>}  headers  The headers
    */
@@ -154,7 +154,7 @@ export class MoxyResponse extends ServerResponse {
   }
 
   /**
-   * Override writable.write to store body internally
+   * Override writablewrite to store body internally
    *
    * @param  {string}   chunk  The chunk
    * @param  {any[]}    args   The arguments
@@ -169,7 +169,7 @@ export class MoxyResponse extends ServerResponse {
   }
 
   /**
-   * Overwrite writable.end to store body internally
+   * Overwrite writableend to store body internally
    *
    * @param {any[]}  args  The arguments
    */

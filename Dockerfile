@@ -7,11 +7,13 @@ COPY package-lock.json package-lock.json
 RUN npm ci
 
 COPY tsconfig.json tsconfig.json
+COPY tsconfig.defs.json tsconfig.defs.json
+COPY tsconfig.container.json tsconfig.container.json
 COPY ./src ./src
-RUN npm run build
+RUN npm run build --ignore-scripts -- -p ./tsconfig.container.json
 
 
-FROM node:16-alpine
+FROM node:16-alpine AS runtime
 
 WORKDIR /opt
 

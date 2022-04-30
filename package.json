@@ -7,10 +7,9 @@
     "setup": "git config core.hooksPath ./githooks",
     "prebuild": "rm -rf dist/*",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "postbuild": "tsc -p ./tsconfig.defs.json",
     "lint": "eslint '{src,test}/**/*.{js,ts,json}'",
-    "watch": "npx nodemon --ext '*' --delay 500ms --watch 'src' --watch 'overrides' --watch 'static' --exec 'npm run build && npm start'",
-    "test": "NODE_ENV=test NODE_ENV=test mocha --require source-map-support/register --recursive 'dist/test/**/*.spec.js'"
+    "test": "NODE_ENV=test mocha --require source-map-support/register --recursive 'dist/test/**/*.spec.js'"
   },
   "bin": {
     "moxy": "dist/src/cli.js"

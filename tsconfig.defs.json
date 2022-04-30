@@ -1,0 +1,8 @@
+{
+  /* https://github.com/microsoft/TypeScript/issues/14619#issuecomment-784973548 */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "removeComments": true
+  },
+}

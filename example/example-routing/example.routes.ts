@@ -8,8 +8,6 @@ export const routeConfig: Routes = {
       // variables from the path can be injected into the response.
       // The simple version is ":variableName" in the path params and body. By
       // default, this will only match word boundaries (eg /:variable/).
-      // The more complicated method is using regex capture groups. This allows
-      // for nested paths or more control over how groups are captured.
       body: `<!DOCTYPE html><html>
         <head>
           <meta charset="utf-8">
@@ -24,7 +22,9 @@ export const routeConfig: Routes = {
       },
     },
   },
-  // using named capture group to include slashes
+  // The more complicated method is using regex capture groups. This allows for
+  // more control over how groups are captured (eg for matching slashes in the
+  // path.
   '/static/(?<file>.*)': {
     // When the value for a method is a simple string, a file is assumed.
     get: '/public/:file',
@@ -85,10 +85,35 @@ export const routeConfig: Routes = {
     get: {
       // slow only 1 method by 100ms
       delay: 100,
-      status: 204
+      status: 204,
     },
     delete: {
-      status: 204
-    }
-  }
+      status: 204,
+    },
+  },
+  // note that by default, the path is converted to a regex, so special chars
+  // should be escaped
+  '/path/with/query\\?search=:theSearchThing': {
+    get: {
+      body: 'you searched for :theSearchThing',
+      headers: { 'Content-Type': 'text/plain' },
+    },
+  },
+  // passing exact: true will prevent the path from being converted to a regex.
+  // NOTE: this will also disable simple or regex replacements. Parsed query
+  // params will still be returned in the variables for replacement.
+  '/exact/match/:notCaptured?queryMustHave': {
+    exact: true,
+    get: {
+      status: 204,
+    },
+  },
+  // if the handler would normally be a function and exact matching is desired,
+  // the 'all' method can be used to achieve this.
+  '/exact/match/handler?ignore=(.*)': {
+    exact: true,
+    all: (request: MoxyRequest, response: MoxyResponse, variables: HandlerVariables) => {
+      return response.sendJson({ matchedExactly: true });
+    },
+  },
 };

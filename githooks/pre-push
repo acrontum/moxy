@@ -10,6 +10,9 @@ cd "$(cd $(dirname $0) && pwd)/.."
 # lint or fail
 npm run lint
 
+# must built
+npm run build
+
 # tests must pass
 npm test
 
