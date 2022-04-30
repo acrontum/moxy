@@ -8,9 +8,8 @@ RUN npm ci
 
 COPY tsconfig.json tsconfig.json
 COPY tsconfig.defs.json tsconfig.defs.json
-COPY tsconfig.container.json tsconfig.container.json
 COPY ./src ./src
-RUN npm run build --ignore-scripts -- -p ./tsconfig.container.json
+RUN npm run build --ignore-scripts -- -p ./tsconfig.defs.json
 
 
 FROM node:16-alpine AS runtime

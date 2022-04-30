@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { realpathSync } from 'fs';
-import { MoxyServer, ServerConfig } from './index';
+import { MoxyServer, ServerConfig } from './server';
 
 const options: ServerConfig = { logging: 'verbose', router: {} };
 const routerFolders: string[] = [];
@@ -11,7 +11,7 @@ const usage = `\
 Start a mocking server
 
 options:
--r, --route FOLDER      Add routes from FOLDER. Can be called multiple times,
+-r, --routes FOLDER     Add routes from FOLDER. Can be called multiple times,
                         FOLDER can be multiple separated by comma (,).
 -p, --port PORT         Run on port PORT. If none specified, will find an
                         avaiable port.
@@ -36,7 +36,7 @@ export const getOption = (argv?: string[]): number => {
       process.exit(0);
 
     case '-r':
-    case '--route':
+    case '--routes':
       routerFolders.push(
         ...argv
           .shift()

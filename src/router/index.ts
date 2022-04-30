@@ -50,7 +50,7 @@ export interface MethodSettings extends PathSettings {
    */
   headers?: OutgoingHttpHeaders;
   /**
-   * headers to add (Content-Type is added automatically)
+   * HTTP request handler function
    */
   handler?: RequestHandler;
 }

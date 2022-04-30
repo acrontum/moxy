@@ -348,7 +348,7 @@ export class Router {
       payload = Object.fromEntries([this.onceRouterPaths[this.onceRouterPaths.length - 1]]);
     }
 
-    return res.sendJson(this.#removeRouteRegex(payload), { status: 200 });
+    return res.sendJson(this.#removeRouteRegex(payload), { status: 201 });
   }
 
   /**
@@ -383,10 +383,12 @@ export class Router {
       return res.sendJson({ message: 'Not found', status: 404 });
     }
 
+    const status = this.routes[path] ? 200 : 201;
+
     delete this.routes[path];
     this.addRoute(path, body);
 
-    return res.sendJson(this.#removeRouteRegex({ [path]: this.routes[path] }), { status: 200 });
+    return res.sendJson(this.#removeRouteRegex({ [path]: this.routes[path] }), { status });
   }
 
   /**
