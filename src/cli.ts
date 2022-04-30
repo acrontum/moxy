@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { realpathSync } from 'fs';
-import { MoxyServer, ServerConfig } from './lib';
+import { MoxyServer, ServerConfig } from './index';
 
 const options: ServerConfig = { logging: 'verbose', router: {} };
 const routerFolders: string[] = [];

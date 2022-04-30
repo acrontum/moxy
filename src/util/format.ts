@@ -1,6 +1,4 @@
-import { Method, Routes } from '../routes';
-import { MoxyRequest } from './request';
-import { MoxyResponse } from './response';
+import { Method, MoxyRequest, MoxyResponse, Routes } from '..';
 
 export const colours = {
   red: '\x1b[31m',
@@ -53,10 +51,10 @@ export const formatBody = (body: string | Buffer | Record<string, any>): string 
   }
 
   if (Buffer.isBuffer(body)) {
-    return body.length > 100 ? body : body.toString();
+    return body.length > 1000 ? `<Buffer ${body.length} bytes>` : body.toString();
   }
 
-  return JSON.stringify(body);
+  return JSON.stringify(body, null, 2);
 };
 
 export const formatRouteResponse = (req: MoxyRequest, res: MoxyResponse): string => {
@@ -70,9 +68,12 @@ export const formatRouteResponse = (req: MoxyRequest, res: MoxyResponse): string
 };
 
 export const formatRoutesForPrinting = (routes: Routes, expandFunction = true): string => {
-  const replacer = (_key: string, value: unknown): unknown => {
+  const replacer = (key: string, value: unknown): unknown => {
     if (typeof value === 'function') {
       return expandFunction ? value.toString() : '[Function: handler]';
+    }
+    if (key === 'urlRegex') {
+      return;
     }
 
     return value;

@@ -1,64 +1,89 @@
 import * as fs from 'fs';
 import { basename, join, posix } from 'path';
-import { RouteConfig, Routes } from '../routes';
-import { formatRoutesForPrinting } from './format';
-import { MoxyRequest } from './request';
-import { MoxyResponse } from './response';
+import {
+  formatRoutesForPrinting,
+  Logger,
+  MoxyRequest,
+  MoxyResponse,
+  PathConfig,
+  RouteConfig,
+  RouterNet,
+  Routes,
+} from '..';
 
 export interface RouterConfig {
   /**
-   * If true, exposes CRUD routes for path config.
+   * If true, exposes CRUD routes for path config
    */
   allowHttpRouteConfig?: boolean;
 }
 
+export interface AddRouteOptions {
+  /**
+   * If true, route is deleted when used
+   */
+  once?: boolean;
+  /**
+   * If true, url is not parsed as regex
+   */
+  exact?: boolean;
+}
+
+export interface PathConfigWithOptions extends PathConfig {
+  urlRegex?: RegExp;
+}
+
+export type ParsedPathConfig = RouteConfig & PathConfigWithOptions;
+
 export class Router {
   /**
-   * Entries of [router path, RouteConfig].
+   * Entries of [router path, ParsedPathConfig]
    */
-  routerPaths: [string, RouteConfig][] = [];
+  routerPaths: [string, ParsedPathConfig][] = [];
   /**
-   * Path-keyed router route config object.
+   * Path-keyed router route config object
    */
-  routes: Routes = {};
+  routes: Record<string, ParsedPathConfig> = {};
   /**
-   * Entries of [router path, RouteConfig] for single-use routes.
+   * Entries of [router path, ParsedPathConfig] for single-use routes
    */
-  onceRouterPaths: [string, RouteConfig][] = [];
+  onceRouterPaths: [string, ParsedPathConfig][] = [];
   /**
-   * Router config options.
+   * Router config options
    */
   options: RouterConfig;
 
-  constructor(options?: RouterConfig) {
+  #routerNet: RouterNet;
+
+  constructor(logger: Logger, options?: RouterConfig) {
     this.options = options || {};
+    this.#routerNet = new RouterNet(this, logger);
   }
 
   /**
-   * Adds a route.
+   * Adds a route
    *
-   * @param  {string}       path          The path
-   * @param  {RouteConfig}  config        The configuration
-   * @param  {boolean}      [once=false]  If true, route fires once only.
+   * @param  {string}           path     The path
+   * @param  {RouteConfig}      config   The configuration
+   * @param  {AddRouteOptions}  options  Options for the route
    *
    * @return {this}
    */
-  addRoute(path: string, config: RouteConfig | Routes, once = false): this {
-    config = this.#convertRouteConfigToRoutes(path, config);
+  addRoute(path: string, config: RouteConfig, options?: AddRouteOptions): this {
+    const compiledRoute = this.#compileRoute(path, config, options);
 
-    for (const [nestedPath, cfg] of Object.entries(config)) {
-      const fullPath = posix.join(path, nestedPath);
-      if (once) {
-        this.onceRouterPaths.push([fullPath, cfg]);
+    if (options?.once) {
+      this.onceRouterPaths.push([path, compiledRoute]);
 
-        return this;
-      }
+      delete compiledRoute.urlRegex;
+      return this;
+    }
 
-      if (typeof cfg === 'function') {
-        this.routes[fullPath] = cfg;
-      } else {
-        this.routes[fullPath] = { ...(this.routes[fullPath] || {}), ...cfg };
-      }
+    if (typeof config === 'function') {
+      this.routes[path] = compiledRoute;
+    } else {
+      this.routes[path] = { ...(this.routes[path] || {}), ...compiledRoute };
+      delete compiledRoute.urlRegex;
     }
 
     this.routerPaths = Object.entries(this.routes);
@@ -67,7 +92,22 @@ export class Router {
   }
 
   /**
-   * Removes a route.
+   * Adds many routes
+   *
+   * @param  {string}           prefix   The path prefix to prepend to all routes
+   * @param  {Routes}           routes   Path suffix keyed RouteConfig
+   * @param  {AddRouteOptions}  options  Options for the routes
+   *
+   * @return {this}
+   */
+  addRoutes(prefix: string, routes: Routes, options?: AddRouteOptions): this {
+    Object.keys(routes).forEach((path) => this.addRoute(posix.join(prefix, path), routes[path], options));
+
+    return this;
+  }
+
+  /**
+   * Removes a route
    *
    * @param  {string}  path  The path
    *
@@ -81,7 +121,7 @@ export class Router {
   }
 
   /**
-   * Recursively search the folder at <path> for files matching <anything>.routes.js(on) and import their config.
+   * Recursively search the folder at <path> for files matching <anything>.routes.js(on) and import their config
    *
    * @param  {string}  [path]  The path
    *
@@ -109,11 +149,11 @@ export class Router {
   }
 
   /**
-   * Gets the folder contents.
+   * Gets the folder contents
    *
    * @param  {string}                dirPath  The dir path
    *
-   * @return {Promise<fs.Dirent[]>}
+   * @return {Promise<fsDirent[]>
    */
   async getFolderContents(dirPath: string): Promise<fs.Dirent[]> {
     const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
@@ -126,7 +166,7 @@ export class Router {
   }
 
   /**
-   * Loads a configuration from file.
+   * Loads a configuration from file
    *
    * @param {string}  filePath  The file path
    * @param {string}  basePath  The base path
@@ -140,8 +180,20 @@ export class Router {
     }
 
     for (const cfg of Object.values(pathConfig)) {
-      this.addRoute(prefix, cfg);
+      this.addRoutes(prefix, cfg);
     }
+  }
+
+  /**
+   * Server request listener
+   *
+   * @param  {MoxyRequest}   req  The request
+   * @param  {MoxyResponse}  res  The resource
+   *
+   * @return {Promise<any>}
+   */
+  async requestListener(req: MoxyRequest, res: MoxyResponse): Promise<any> {
+    return this.#routerNet.requestListener(req, res);
   }
 
   /**
@@ -191,33 +243,31 @@ export class Router {
   }
 
   /**
-   * Converts Routes to RouteConfig.
+   * Adds regex test to route config when options.exact is not true
    *
-   * @param  {string}                path    The base path
-   * @param  {(RouteConfig|Routes)}  config  The routing config
+   * @param  {string}            fullPath  The full path
+   * @param  {RouteConfig}       config    The configuration
+   * @param  {AddRouteOptions}   options   Add route options
    *
-   * @return {RouteConfig}
+   * @return {ParsedPathConfig}  The parsed path configuration
    */
-  #convertRouteConfigToRoutes(path: string, config: RouteConfig | Routes): Routes {
-    if (typeof config !== 'object' || !config) {
-      return { [path]: config };
+  #compileRoute(fullPath: string, config: RouteConfig, options?: AddRouteOptions): ParsedPathConfig {
+    if (typeof config === 'string' || typeof config === 'boolean') {
+      return config;
     }
 
-    if ('status' in config || 'body' in config || 'headers' in config || 'handler' in config) {
-      return { [path]: config };
+    const parsed = config as PathConfigWithOptions;
+
+    if (!options?.exact && !(config as PathConfig)?.exact) {
+      const pathWithGroups = this.#routerNet.parsePlaceholderParams(fullPath);
+      parsed.urlRegex = new RegExp(`^${pathWithGroups}(\\?.*)?$`, 'g');
     }
 
-    for (const method of ['connect', 'delete', 'get', 'head', 'options', 'patch', 'post', 'put', 'trace']) {
-      if (method in config) {
-        return { '': config };
-      }
-    }
-
-    return config as Routes;
+    return parsed;
   }
 
   /**
-   * Determines whether the specified path is router file.
+   * Determines whether the specified path is router file
    *
    * @param  {string}   path  The path
    *
@@ -228,7 +278,7 @@ export class Router {
   }
 
   /**
-   * Sends an api root response.
+   * Sends an api root response
    *
    * @param  {MoxyResponse}  res  The response
    *
@@ -245,7 +295,7 @@ export class Router {
     return res.sendJson({
       'GET /routes?once=false': 'show router routes',
       'POST /routes?once=false': 'create route',
-      'PUT /routes/:route': 'create or update route',
+      'PUT /routes/:route': 'create or replace route',
       'PATCH /routes/:route': 'update route',
       'DELETE /routes/:route': 'delete route',
       'GET /router?once=false&serializeMethods=true': 'show router',
@@ -253,7 +303,7 @@ export class Router {
   }
 
   /**
-   * Sends api router keys.
+   * Sends api router keys
    *
    * @param  {MoxyRequest}   req  The request
    * @param  {MoxyResponse}  res  The response
@@ -267,7 +317,7 @@ export class Router {
   }
 
   /**
-   * Sends the current router config.
+   * Sends the current router config
    *
    * @param  {MoxyRequest}   req  The request
    * @param  {MoxyResponse}  res  The response
@@ -281,7 +331,7 @@ export class Router {
   }
 
   /**
-   * Creates a route config.
+   * Creates a route config
    *
    * @param  {MoxyRequest}   req     The request
    * @param  {MoxyResponse}  res     The response
@@ -291,18 +341,18 @@ export class Router {
    * @return {MoxyResponse}
    */
   #createApiRoute(req: MoxyRequest, res: MoxyResponse, path: string, config: RouteConfig): MoxyResponse {
-    this.addRoute(path, config, req.query.once === 'true');
+    this.addRoute(path, config, { once: req.query.once === 'true' });
 
     let payload = { [path]: this.routes[path] };
     if (req.query.once === 'true') {
       payload = Object.fromEntries([this.onceRouterPaths[this.onceRouterPaths.length - 1]]);
     }
 
-    return res.sendJson(payload, { status: 200 });
+    return res.sendJson(this.#removeRouteRegex(payload), { status: 200 });
   }
 
   /**
-   * Updates an existing route config.
+   * Updates an existing route config
    *
    * @param  {MoxyResponse}  res   The response
    * @param  {string}        path  The path
@@ -316,11 +366,11 @@ export class Router {
     }
     this.addRoute(path, body);
 
-    return res.sendJson({ [path]: this.routes[path] }, { status: 200 });
+    return res.sendJson(this.#removeRouteRegex({ [path]: this.routes[path] }), { status: 200 });
   }
 
   /**
-   * Creates or replaces a route config.
+   * Creates or replaces a route config
    *
    * @param  {MoxyResponse}         res   The respoonse
    * @param  {string}               path  The path
@@ -336,11 +386,11 @@ export class Router {
     delete this.routes[path];
     this.addRoute(path, body);
 
-    return res.sendJson({ [path]: this.routes[path] }, { status: 200 });
+    return res.sendJson(this.#removeRouteRegex({ [path]: this.routes[path] }), { status: 200 });
   }
 
   /**
-   * Removes a route config.
+   * Removes a route config
    *
    * @param  {MoxyResponse}  res   The response
    * @param  {string}        path  The path
@@ -352,5 +402,20 @@ export class Router {
     this.routerPaths = Object.entries(this.routes);
 
     return res.sendJson({ message: 'Ok' }, { status: 200 });
+  }
+
+  /**
+   * Hides parsed regex from response
+   *
+   * @param  {Routes}  json  The json
+   *
+   * @return {string}
+   */
+  #removeRouteRegex(routes: Routes): string {
+    return JSON.stringify(routes, (key, value) => {
+      if (key !== 'urlRegex') {
+        return value;
+      }
+    });
   }
 }

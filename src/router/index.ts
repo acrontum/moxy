@@ -1,6 +1,6 @@
 import { OutgoingHttpHeaders } from 'http';
 import { RequestOptions } from 'https';
-import { MoxyRequest, MoxyResponse } from '../lib';
+import { MoxyRequest, MoxyResponse } from '..';
 
 /**
  * Path and query params
@@ -8,11 +8,16 @@ import { MoxyRequest, MoxyResponse } from '../lib';
 export type HandlerVariables = Record<string, string | string[]>;
 
 /**
+ * Common http verbs
+ */
+export type Method = 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
+
+/**
  * Manual request handler
  */
 export type RequestHandler = (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => void;
 
-export interface ProxySettings {
+export interface PathSettings {
   /**
    * If set, will proxy all requests to the target
    */
@@ -21,23 +26,17 @@ export interface ProxySettings {
    * Options to pass through proxy
    */
   proxyOptions?: RequestOptions;
-}
-
-/**
- * Common http verbs
- */
-export type Method = 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
-
-export interface DelaySettings {
   /**
    * Method-level delay (in milliseconds)
    */
   delay?: number;
+  /**
+   * If true, will not parse route as regex
+   */
+  exact?: true;
 }
 
-export type PathSettings = ProxySettings & DelaySettings;
-
-export interface Route extends PathSettings {
+export interface MethodSettings extends PathSettings {
   /**
    * status code to return (defaults to 200)
    */
@@ -75,12 +74,12 @@ export interface Route extends PathSettings {
  *   '/static/:file'
  *
  */
-export type MethodConfig = Route | string | RequestHandler;
+export type MethodConfig = MethodSettings | string | RequestHandler;
 
 /**
  * Configuration for a path.
  */
-export type PathConfig = PathSettings & { [key in Method]?: MethodConfig };
+export type PathConfig = PathSettings & { all?: MethodConfig } & { [key in Method]?: MethodConfig };
 
 /**
  * Configuration for a route.
@@ -91,3 +90,6 @@ export type RouteConfig = RequestHandler | PathConfig;
  * Configuration for multiple routes.
  */
 export type Routes = Record<string, RouteConfig>;
+
+export * from './router';
+export * from './router-net';
