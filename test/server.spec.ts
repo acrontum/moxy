@@ -221,7 +221,7 @@ describe(relative(process.cwd(), __filename), () => {
         config: basicRouteConfig,
       })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
+        expect(status).equals(201);
         expect(body).deep.equals({ '/brew': basicRouteConfig });
       });
 
@@ -243,7 +243,7 @@ describe(relative(process.cwd(), __filename), () => {
         config: { get: basicRouteConfig.post },
       })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
+        expect(status).equals(201);
         expect(body).deep.equals({ '/brew': { get: basicRouteConfig.post } });
       });
 
