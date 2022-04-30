@@ -101,7 +101,8 @@ export const routeConfig: Routes = {
   },
   // passing exact: true will prevent the path from being converted to a regex.
   // NOTE: this will also disable simple or regex replacements. Parsed query
-  // params will still be returned in the variables for replacement.
+  // params will still be returned in HandlerVariables if you use a request
+  // handler (see below).
   '/exact/match/:notCaptured?queryMustHave': {
     exact: true,
     get: {
