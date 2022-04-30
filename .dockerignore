@@ -1,8 +1,5 @@
-dist
-build
-.git
-**/*.env
-node_modules
-test
-githooks
-example
+*
+!package-lock.json
+!package.json
+!tsconfig*.json
+!src/
