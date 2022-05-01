@@ -1,6 +1,6 @@
 {
-  /* https://github.com/tsconfig/bases/blob/main/bases/node16.json */
-  "extends": "@tsconfig/node16/tsconfig.json",
+  /* https://github.com/tsconfig/bases/blob/main/bases/node12.json */
+  "extends": "@tsconfig/node12/tsconfig.json",
   "compilerOptions": {
     "declaration": true,
     "emitDecoratorMetadata": true,

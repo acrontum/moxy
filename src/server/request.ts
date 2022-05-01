@@ -1,8 +1,8 @@
-import { Socket } from 'net';
 import { IncomingMessage } from 'http';
+import { Socket } from 'net';
 import { ParsedUrlQuery } from 'querystring';
 import { parse } from 'url';
-import { randomUUID } from 'crypto';
+import { getId } from '../util';
 
 export class MoxyRequest extends IncomingMessage {
   /**
@@ -24,7 +24,7 @@ export class MoxyRequest extends IncomingMessage {
   constructor(socket: Socket) {
     super(socket);
 
-    this.id = randomUUID();
+    this.id = getId();
     this.timestamp = Date.now();
 
     this.body = new Promise((resolve) => {
