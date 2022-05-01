@@ -8,7 +8,7 @@
     "build": "tsc",
     "postbuild": "tsc -p ./tsconfig.defs.json",
     "setup": "git config core.hooksPath ./githooks",
-    "docs": "typedoc --readme none --excludeExternals --excludePrivate --out docs src/index.ts",
+    "docs": "typedoc --readme none --excludeExternals --excludePrivate --out docs --gitRevision main src/index.ts",
     "lint": "eslint '{src,test}/**/*.{js,ts,json}'",
     "test": "NODE_ENV=test mocha --require source-map-support/register --recursive 'dist/test/**/*.spec.js'"
   },
