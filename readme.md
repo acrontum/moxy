@@ -3,21 +3,21 @@
 
 Simple, configurable mock / proxy server.
 
----
-
-<div style="display: flex; justify-content: center;">
-  <a href="https://github.com/acrontum/moxy" alt="Github acrontum/moxy" style="margin-left: 0.5rem; margin-right: 1rem;">
-    <img alt="Docker Image Version (latest semver)" src="https://img.shields.io/docker/v/acrontum/moxy">
-  </a>
-
-  <a href="https://www.npmjs.org/package/@acrontum/moxy" alt="npm @acrontum/moxy" style="margin-left: 0.5rem; margin-right: 1rem;">
+<p align="center">
+  <a href="https://www.npmjs.org/package/@acrontum/moxy" alt="npm @acrontum/moxy">
     <img alt="npm (scoped)" src="https://img.shields.io/npm/v/@acrontum/moxy">
   </a>
 
-  <a href="https://hub.docker.com/r/acrontum/moxy/tags" alt="Dockerhub acrontum/moxy" style="margin-left: 0.5rem; margin-right: 1rem;">
-    <img alt="Docker Image Version (latest semver)" src="https://img.shields.io/docker/v/acrontum/moxy">
+  <a href="https://hub.docker.com/r/acrontum/moxy/tags" alt="Dockerhub acrontum/moxy">
+    <img alt="Docker Image Version (latest semver)" src="https://img.shields.io/docker/v/acrontum/moxy?label=dockerhub">
   </a>
-</div>
+  
+  <a href="https://github.com/acrontum/moxy" alt="Github acrontum/moxy">
+    <img alt="GitHub tag (latest SemVer)" src="https://img.shields.io/github/v/tag/acrontum/moxy">
+  </a>
+</p>
+
+---
 
 <!-- 
 to regen: 
@@ -184,7 +184,7 @@ See [API](#api) for full usage.
 
 ### Via HTTP requests
 
-Assuming moxy is running at localhost:5000, and has [HTTP config](#api) enabled:
+Assuming moxy is running at localhost:5000, and has [HTTP config](https://acrontum.github.io/moxy/interfaces/ServerConfig.html#router) enabled:
 
 ```bash
 # hit the moxy api
@@ -453,7 +453,7 @@ export const routeConfig: Routes = {
 
 ## API
 
-See [full API docs](./docs/README.md).
+See [full API docs](https://acrontum.github.io/moxy/).
 
 
 ### CLI options
@@ -475,7 +475,7 @@ options:
 
 ### HTTP API
 
-Moxy exposes some default HTTP routes for checking routing configurations. With [`allowHttpRouteConfig`](./docs/interfaces/ServerConfig.md#router) enabled:
+Moxy exposes some default HTTP routes for checking routing configurations. With [`allowHttpRouteConfig`](https://acrontum.github.io/moxy/interfaces/ServerConfig.html#router) enabled:
 
 ```typescript
 const server = new MoxyServer({ router: { allowHttpRouteConfig: true } });
@@ -532,7 +532,7 @@ Query params:
 
 Will add a json payload to the router.
 
-The payload should contain `path` and `config`, where `path` is the router path and `config` is [`RouteConfig`](docs/README.md#routeconfig):
+The payload should contain `path` and `config`, where `path` is the router path and `config` is [`RouteConfig`](https://acrontum.github.io/moxy/index.html#routeconfig):
 ```json
 {
   "path": "/some/path",
@@ -554,7 +554,7 @@ The response will be a 200 containing the newly added route.
 
 Will update the route specified by `:route` (`:route` will match everything after `/router/` including slashes).
 
-Payload: [`RouteConfig`](docs/README.md#routeconfig).
+Payload: [`RouteConfig`](https://acrontum.github.io/moxy/index.md#routeconfig).
 
 The response will be a 200 containing the newly updated route.
 
@@ -562,7 +562,7 @@ The response will be a 200 containing the newly updated route.
 
 Will replace the route specified by `:route` (`:route` will match everything after `/router/` including slashes).
 
-Payload: [`RouteConfig`](docs/README.md#routeconfig).
+Payload: [`RouteConfig`](https://acrontum.github.io/moxy/index.md#routeconfig).
 
 The response will be a 200 or 201 containing the created or updated route.
 
