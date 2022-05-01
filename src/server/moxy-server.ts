@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
 import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'http';
 import { AddressInfo, Socket } from 'net';
 import { AddRouteOptions, RouteConfig, Router, RouterConfig, Routes } from '../router';
-import { Logger, LogLevels } from '../util';
+import { getId, Logger, LogLevels } from '../util';
 import { MoxyRequest } from './request';
 import { MoxyResponse } from './response';
 
@@ -215,7 +214,7 @@ export class MoxyServer {
     const connections: Record<string, Socket> = {};
 
     this.server.on('connection', (socket) => {
-      const id = randomUUID();
+      const id = getId();
       connections[id] = socket;
 
       socket.on('close', () => {

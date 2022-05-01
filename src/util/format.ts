@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Method, Routes } from '../router';
 import { MoxyRequest, MoxyResponse } from '../server';
 
@@ -82,3 +83,6 @@ export const formatRoutesForPrinting = (routes: Routes, expandFunction = true): 
 
   return JSON.stringify(routes, replacer);
 };
+
+export const getId: () => string =
+  typeof randomUUID === 'function' ? randomUUID : () => Math.round(Math.random() * 0xffffffffff).toString(36);
