@@ -1,17 +1,10 @@
 import { randomUUID } from 'crypto';
 import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'http';
 import { AddressInfo, Socket } from 'net';
-import {
-  AddRouteOptions,
-  Logger,
-  LogLevels,
-  MoxyRequest,
-  MoxyResponse,
-  RouteConfig,
-  Router,
-  RouterConfig,
-  Routes,
-} from '..';
+import { AddRouteOptions, RouteConfig, Router, RouterConfig, Routes } from '../router';
+import { Logger, LogLevels } from '../util';
+import { MoxyRequest } from './request';
+import { MoxyResponse } from './response';
 
 export interface ServerConfig {
   /**

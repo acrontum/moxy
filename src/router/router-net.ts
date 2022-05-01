@@ -1,20 +1,18 @@
 import * as http from 'http';
 import * as https from 'https';
 import { URL } from 'url';
+import { MoxyRequest, MoxyResponse } from '../server';
+import { formatRouteResponse, Logger } from '../util';
 import {
-  formatRouteResponse,
   HandlerVariables,
-  Logger,
   Method,
   MethodSettings,
-  MoxyRequest,
-  MoxyResponse,
   ParsedPathConfig,
   PathConfig,
   PathConfigWithOptions,
   PathSettings,
   Router,
-} from '..';
+} from './index';
 
 export class RouterNet {
   #router: Router;

@@ -1,15 +1,8 @@
 import * as fs from 'fs';
 import { basename, join, posix } from 'path';
-import {
-  formatRoutesForPrinting,
-  Logger,
-  MoxyRequest,
-  MoxyResponse,
-  PathConfig,
-  RouteConfig,
-  RouterNet,
-  Routes,
-} from '..';
+import { MoxyRequest, MoxyResponse } from '../server';
+import { formatRoutesForPrinting, Logger } from '../util';
+import { PathConfig, RouteConfig, RouterNet, Routes } from './index';
 
 export interface RouterConfig {
   /**

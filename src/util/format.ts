@@ -1,4 +1,5 @@
-import { Method, MoxyRequest, MoxyResponse, Routes } from '..';
+import { Method, Routes } from '../router';
+import { MoxyRequest, MoxyResponse } from '../server';
 
 export const colours = {
   red: '\x1b[31m',
