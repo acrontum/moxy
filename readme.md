@@ -11,7 +11,7 @@ Simple, configurable mock / proxy server.
   <a href="https://hub.docker.com/r/acrontum/moxy/tags" alt="Dockerhub acrontum/moxy">
     <img alt="Docker Image Version (latest semver)" src="https://img.shields.io/docker/v/acrontum/moxy?label=dockerhub">
   </a>
-  
+
   <a href="https://github.com/acrontum/moxy" alt="Github acrontum/moxy">
     <img alt="GitHub tag (latest SemVer)" src="https://img.shields.io/github/v/tag/acrontum/moxy">
   </a>
@@ -19,8 +19,8 @@ Simple, configurable mock / proxy server.
 
 ---
 
-<!-- 
-to regen: 
+<!--
+to regen:
   npx doctoc --github readme.md
 
 then manually remove %5C from the routes
@@ -148,7 +148,7 @@ moxy.on('/some/path', {
 moxy.onAll('/auth/', {
   '/login/': {
     post: {
-      status: 401, 
+      status: 401,
       body: { message: 'Unauthorized' }
     }
   },
@@ -198,7 +198,7 @@ npx @acrontum/moxy --port 5000 --routes ./routes/ --on '{
         "message": "I am a teapot"
       }
     }
-  } 
+  }
 }'
 ```
 
@@ -213,14 +213,14 @@ curl localhost:5000/_moxy/
 # add a new handler that responds to GET /test/path with a 204 no content
 curl localhost:5000/_moxy/routes \
   -H 'Content-Type: application/json' \
-  -d '{ 
-    "path": "/test/path", 
-    "config": { 
-      "get": { 
-        "status": 200, 
-        "body": "neat" 
-      } 
-    } 
+  -d '{
+    "path": "/test/path",
+    "config": {
+      "get": {
+        "status": 200,
+        "body": "neat"
+      }
+    }
   }'
 
 # will show the array of paths avaiable
@@ -238,14 +238,14 @@ curl -X DELETE localhost:5000/_moxy/routes/test/path
 # add a "once" route handler
 curl localhost:5000/_moxy/routes?once=true \
   -H 'Content-Type: application/json' \
-  -d '{ 
-    "path": "/pew/pew", 
-    "config": { 
-      "get": { 
-        "status": 200, 
-        "body": "neat" 
-      } 
-    } 
+  -d '{
+    "path": "/pew/pew",
+    "config": {
+      "get": {
+        "status": 200,
+        "body": "neat"
+      }
+    }
   }'
 
 # 200
@@ -333,7 +333,7 @@ export const routes = {
   }
 }
 
-// or 
+// or
 
 moxy
   .on('/static/(?<file>.*)', { get: '/public/:file' })
@@ -452,7 +452,7 @@ export const routeConfig: Routes = {
   },
   // passing exact: true will prevent the path from being converted to a regex.
   // NOTE: this will also disable simple or regex replacements. Parsed query
-  // params will still be returned in HandlerVariables if you use a request 
+  // params will still be returned in HandlerVariables if you use a request
   // handler (see below).
   '/exact/match/:notCaptured?queryMustHave': {
     exact: true,
