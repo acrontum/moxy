@@ -11,7 +11,7 @@ Simple, configurable mock / proxy server.
   <a href="https://hub.docker.com/r/acrontum/moxy/tags" alt="Dockerhub acrontum/moxy">
     <img alt="Docker Image Version (latest semver)" src="https://img.shields.io/docker/v/acrontum/moxy?label=dockerhub">
   </a>
-  
+
   <a href="https://github.com/acrontum/moxy" alt="Github acrontum/moxy">
     <img alt="GitHub tag (latest SemVer)" src="https://img.shields.io/github/v/tag/acrontum/moxy">
   </a>
@@ -19,8 +19,8 @@ Simple, configurable mock / proxy server.
 
 ---
 
-<!-- 
-to regen: 
+<!--
+to regen:
   npx doctoc --github readme.md
 
 then manually remove %5C from the routes
@@ -112,7 +112,7 @@ services:
     ports:
       - 5000:80
     init: true
-    command: --allowHttpRouteConfig --routes /opt/routes
+    command: --allow-http-config --routes /opt/routes
 ```
 
 ## Usage
@@ -148,7 +148,7 @@ moxy.on('/some/path', {
 moxy.onAll('/auth/', {
   '/login/': {
     post: {
-      status: 401, 
+      status: 401,
       body: { message: 'Unauthorized' }
     }
   },
@@ -171,6 +171,9 @@ moxy.on('/not/a/test', (req: MoxyRequest, res: MoxyResponse, variables: HandlerV
   return res.sendJson({ pewPew: 'lazors' });
 });
 
+// load from filesystem
+await moxy.router.addRoutesFromFolder('/path/to/my/routes');
+
 // using basic variable replacement, search in a static folder and return an image
 moxy.on('/users/:userId/profile-picture', '/static/images/:userId.png');
 
@@ -181,6 +184,23 @@ await moxy.close({ closeConnections: true });
 ```
 
 See [API](#api) for full usage.
+
+### Via CLI
+
+```bash
+# load from local routes folder, and add single get handler for /hello/world
+npx @acrontum/moxy --port 5000 --routes ./routes/ --on '{
+  "path": "hello/world",
+  "config": {
+    "get": {
+      "status": 418,
+      "body": {
+        "message": "I am a teapot"
+      }
+    }
+  }
+}'
+```
 
 ### Via HTTP requests
 
@@ -193,14 +213,14 @@ curl localhost:5000/_moxy/
 # add a new handler that responds to GET /test/path with a 204 no content
 curl localhost:5000/_moxy/routes \
   -H 'Content-Type: application/json' \
-  -d '{ 
-    "path": "/test/path", 
-    "config": { 
-      "get": { 
-        "status": 200, 
-        "body": "neat" 
-      } 
-    } 
+  -d '{
+    "path": "/test/path",
+    "config": {
+      "get": {
+        "status": 200,
+        "body": "neat"
+      }
+    }
   }'
 
 # will show the array of paths avaiable
@@ -218,14 +238,14 @@ curl -X DELETE localhost:5000/_moxy/routes/test/path
 # add a "once" route handler
 curl localhost:5000/_moxy/routes?once=true \
   -H 'Content-Type: application/json' \
-  -d '{ 
-    "path": "/pew/pew", 
-    "config": { 
-      "get": { 
-        "status": 200, 
-        "body": "neat" 
-      } 
-    } 
+  -d '{
+    "path": "/pew/pew",
+    "config": {
+      "get": {
+        "status": 200,
+        "body": "neat"
+      }
+    }
   }'
 
 # 200
@@ -313,7 +333,7 @@ export const routes = {
   }
 }
 
-// or 
+// or
 
 moxy
   .on('/static/(?<file>.*)', { get: '/public/:file' })
@@ -432,7 +452,7 @@ export const routeConfig: Routes = {
   },
   // passing exact: true will prevent the path from being converted to a regex.
   // NOTE: this will also disable simple or regex replacements. Parsed query
-  // params will still be returned in HandlerVariables if you use a request 
+  // params will still be returned in HandlerVariables if you use a request
   // handler (see below).
   '/exact/match/:notCaptured?queryMustHave': {
     exact: true,
@@ -460,17 +480,17 @@ See [full API docs](https://acrontum.github.io/moxy/).
 
 ```bash
 # npx @acrontum/moxy --help
-
 Start a mocking server
 
 options:
--r, --routes FOLDER     Add routes from FOLDER. Can be called multiple times,
-                        FOLDER can be multiple separated by comma (,).
--p, --port PORT         Run on port PORT. If none specified, will find an
-                        avaiable port.
--q, --quiet             Decrease log verbosity.
--a, --allowHttpConfig   Allow routes config via HTTP methods. Default false.
--h, --help              Show this menu.
+-r, --routes FOLDER       Add routes from FOLDER. Can be called multiple times,
+                          FOLDER can be multiple separated by comma (,).
+-p, --port PORT           Run on port PORT. If none specified, will find an
+                          avaiable port.
+-o, --on CONFIG           Add json CONFIG to routes.
+-q, --quiet               Decrease log verbosity.
+-a, --allow-http-config   Allow routes config via HTTP methods. Default false.
+-h, --help                Show this menu.
 ```
 
 ### HTTP API
@@ -481,7 +501,7 @@ Moxy exposes some default HTTP routes for checking routing configurations. With 
 const server = new MoxyServer({ router: { allowHttpRouteConfig: true } });
 ```
 ```bash
-npx @acrontum/moxy --allowHttpConfig
+npx @acrontum/moxy --allow-http-config
 ```
 
 it will also expose HTTP CRUD routes.
