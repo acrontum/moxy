@@ -39,6 +39,22 @@ describe(relative(process.cwd(), __filename), () => {
     expect((routeConfig['/static/(?<file>.*)'] as PathConfig).get).equals('/public/:file');
     (routeConfig['/static/(?<file>.*)'] as PathConfig).get = '/test/:file';
 
+    // google proxy is slow-ish
+    const proxy = new MoxyServer({ logging: 'error' });
+    proxy.on('/test\\?q=asdf', { get: { status: 418 } });
+    await proxy.listen();
+    after(() => proxy.close({ closeConnections: true }));
+
+    expect(routeConfig['proxied-server(?<path>.*)'] as PathConfig).deep.equals({
+      proxy: 'https://www.google.com:path',
+      proxyOptions: {
+        headers: {
+          'x-auth-token': 'totally-real',
+        },
+      },
+    });
+    (routeConfig['proxied-server(?<path>.*)'] as PathConfig).proxy = `http://localhost:${proxy.port}:path`;
+
     moxy.onAll('/example-routing', routeConfig);
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
@@ -99,7 +115,7 @@ describe(relative(process.cwd(), __filename), () => {
           },
         },
         '/example-routing/proxied-server(?<path>.*)': {
-          proxy: 'https://www.google.com:path',
+          proxy: `http://localhost:${proxy.port}:path`,
           proxyOptions: {
             headers: {
               'x-auth-token': 'totally-real',
@@ -149,7 +165,7 @@ describe(relative(process.cwd(), __filename), () => {
     await request.get('/example-routing/static/fixtures/static/index.html').expect(200);
     await request.post('/example-routing/auth/login').expect(200);
     await request.patch('/example-routing/users/me').expect(200);
-    await request.get('/example-routing/proxied-server/?q=asdf').expect(200);
+    await request.get('/example-routing/proxied-server/test?q=asdf').expect(418);
     await request.get('/example-routing/manual-override').expect(418);
     await request.get('/example-routing/partly-manual-override/user_id').expect(418);
     await request.delete('/example-routing/glacial/').expect(204);
