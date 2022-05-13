@@ -171,6 +171,9 @@ moxy.on('/not/a/test', (req: MoxyRequest, res: MoxyResponse, variables: HandlerV
   return res.sendJson({ pewPew: 'lazors' });
 });
 
+// load from filesystem
+await moxy.router.addRoutesFromFolder('/path/to/my/routes');
+
 // using basic variable replacement, search in a static folder and return an image
 moxy.on('/users/:userId/profile-picture', '/static/images/:userId.png');
 
@@ -181,6 +184,23 @@ await moxy.close({ closeConnections: true });
 ```
 
 See [API](#api) for full usage.
+
+### Via CLI
+
+```bash
+# load from local routes folder, and add single get handler for /hello/world
+npx @acrontum/moxy --port 5000 --routes ./routes/ --on '{
+  "path": "hello/world",
+  "config": {
+    "get": {
+      "status": 418,
+      "body": {
+        "message": "I am a teapot"
+      }
+    }
+  } 
+}'
+```
 
 ### Via HTTP requests
 
