@@ -112,7 +112,7 @@ services:
     ports:
       - 5000:80
     init: true
-    command: --allowHttpRouteConfig --routes /opt/routes
+    command: --allow-http-config --routes /opt/routes
 ```
 
 ## Usage
@@ -460,17 +460,17 @@ See [full API docs](https://acrontum.github.io/moxy/).
 
 ```bash
 # npx @acrontum/moxy --help
-
 Start a mocking server
 
 options:
--r, --routes FOLDER     Add routes from FOLDER. Can be called multiple times,
-                        FOLDER can be multiple separated by comma (,).
--p, --port PORT         Run on port PORT. If none specified, will find an
-                        avaiable port.
--q, --quiet             Decrease log verbosity.
--a, --allowHttpConfig   Allow routes config via HTTP methods. Default false.
--h, --help              Show this menu.
+-r, --routes FOLDER       Add routes from FOLDER. Can be called multiple times,
+                          FOLDER can be multiple separated by comma (,).
+-p, --port PORT           Run on port PORT. If none specified, will find an
+                          avaiable port.
+-o, --on CONFIG           Add json CONFIG to routes.
+-q, --quiet               Decrease log verbosity.
+-a, --allow-http-config   Allow routes config via HTTP methods. Default false.
+-h, --help                Show this menu.
 ```
 
 ### HTTP API
@@ -481,7 +481,7 @@ Moxy exposes some default HTTP routes for checking routing configurations. With 
 const server = new MoxyServer({ router: { allowHttpRouteConfig: true } });
 ```
 ```bash
-npx @acrontum/moxy --allowHttpConfig
+npx @acrontum/moxy --allow-http-config
 ```
 
 it will also expose HTTP CRUD routes.
