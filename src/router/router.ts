@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { basename, join, posix } from 'path';
 import { MoxyRequest, MoxyResponse } from '../server';
-import { formatRoutesForPrinting, Logger } from '../util';
+import { formatRoutesForPrinting, HttpException, Logger } from '../util';
 import { PathConfig, RouteConfig, RouterNet, Routes } from './index';
 
 export interface RouterConfig {
@@ -64,10 +64,10 @@ export class Router {
    */
   addRoute(path: string, config: RouteConfig, options?: AddRouteOptions): this {
     if (!path) {
-      throw new Error('router.on must contain "path"');
+      throw new HttpException('router.on must contain "path"', 422);
     }
     if (!config) {
-      throw new Error('router.on must contain "config"');
+      throw new HttpException('router.on must contain "config"', 422);
     }
 
     const compiledRoute = this.#compileRoute(path, config, options);

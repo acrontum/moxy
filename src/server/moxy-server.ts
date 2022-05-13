@@ -1,7 +1,7 @@
 import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'http';
 import { AddressInfo, Socket } from 'net';
 import { AddRouteOptions, RouteConfig, Router, RouterConfig, Routes } from '../router';
-import { getId, Logger, LogLevels } from '../util';
+import { getId, HttpException, Logger, LogLevels } from '../util';
 import { MoxyRequest } from './request';
 import { MoxyResponse } from './response';
 
@@ -198,11 +198,18 @@ export class MoxyServer {
    *
    * @param {Error}  error  The error
    */
-  #handleUncaughtErrors(error: Error): void {
+  #handleUncaughtErrors(error: HttpException): void {
     this.#logger.error(error);
 
     if (this.#currentResponse && !this.#currentResponse.writableEnded) {
-      this.#currentResponse.sendJson({ status: 500, error: JSON.stringify(error, Object.getOwnPropertyNames(error)) });
+      if (error?.status) {
+        this.#currentResponse.sendJson({ status: error.status, error: error.message });
+      } else {
+        this.#currentResponse.sendJson({
+          status: 500,
+          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        });
+      }
       this.#currentResponse = null;
     }
   }
