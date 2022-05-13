@@ -63,6 +63,13 @@ export class Router {
    * @return {this}
    */
   addRoute(path: string, config: RouteConfig, options?: AddRouteOptions): this {
+    if (!path) {
+      throw new Error('router.on must contain "path"');
+    }
+    if (!config) {
+      throw new Error('router.on must contain "config"');
+    }
+
     const compiledRoute = this.#compileRoute(path, config, options);
 
     if (options?.once) {
