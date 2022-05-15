@@ -490,6 +490,7 @@ options:
 -o, --on CONFIG           Add json CONFIG to routes.
 -q, --quiet               Decrease log verbosity.
 -a, --allow-http-config   Allow routes config via HTTP methods. Default false.
+-v, --version             Show build version and exit.
 -h, --help                Show this menu.
 ```
 
