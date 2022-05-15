@@ -3,6 +3,7 @@
 import { realpathSync } from 'fs';
 import { PathConfig } from './router';
 import { MoxyServer, ServerConfig } from './server';
+import { version } from '../package.json';
 
 interface CliConfig {
   options: ServerConfig;
@@ -22,6 +23,7 @@ options:
 -o, --on CONFIG           Add json CONFIG to routes.
 -q, --quiet               Decrease log verbosity.
 -a, --allow-http-config   Allow routes config via HTTP methods. Default false.
+-v, --version             Show build version and exit.
 -h, --help                Show this menu.
 `;
 
@@ -47,6 +49,11 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
     case '-h':
     case '--help':
       process.stdout.write(usage);
+      process.exit(0);
+
+    case '-v':
+    case '--version':
+      process.stdout.write(`${version}\n`);
       process.exit(0);
 
     case '-r':
