@@ -325,7 +325,6 @@ import { exec, spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { rm } from 'fs/promises';
 import { join } from 'path';
-import { Readable } from 'stream';
 import { promisify } from 'util';
 
 const moxy = new MoxyServer();
@@ -389,14 +388,9 @@ moxy.on('/projects/:repo/git-upload-pack', {
       });
 
       const proc = spawn(`git-upload-pack`, ['--stateless-rpc', repo]);
-
-      const stream = new Readable();
-      stream.push(await req.body);
-      stream.push(null);
-
-      stream.pipe(proc.stdin);
-
       proc.stdout.on('end', () => rm(join(repo, '.git'), { recursive: true }).catch(console.error));
+
+      req.pipe(proc.stdin);
 
       return proc.stdout.pipe(res);
     } catch (e) {
