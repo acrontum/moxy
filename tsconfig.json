@@ -15,7 +15,7 @@
   },
   "include": [
     "src",
-    "example",
+    "example/example-routing",
     "test",
     "test/**/*.json"
   ],

@@ -1,7 +1,7 @@
 # Moxy
 
 
-Simple, configurable mock / proxy server.
+Simple, configurable mock / proxy server with 0 dependencies.
 
 <p align="center">
   <a href="https://www.npmjs.org/package/@acrontum/moxy" alt="npm @acrontum/moxy">
@@ -15,7 +15,10 @@ Simple, configurable mock / proxy server.
   <a href="https://github.com/acrontum/moxy" alt="Github acrontum/moxy">
     <img alt="GitHub tag (latest SemVer)" src="https://img.shields.io/github/v/tag/acrontum/moxy">
   </a>
+
+  <img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/@acrontum/moxy">
 </p>
+
 
 ---
 
@@ -30,13 +33,22 @@ then manually remove %5C from the routes
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [Quick start](#quick-start)
+- [Installation](#installation)
+- [Examples (see the example folder)](#examples-see-the-example-folder)
+  - [Simple server](#simple-server)
+  - [Use it in tests](#use-it-in-tests)
+  - [Using variable replacement](#using-variable-replacement)
+  - [Configure a basic file server:](#configure-a-basic-file-server)
+  - [Use as a proxy](#use-as-a-proxy)
+  - [Use it to serve a local folder as a git repo (eg in tests which depend on a `git clone`)](#use-it-to-serve-a-local-folder-as-a-git-repo-eg-in-tests-which-depend-on-a-git-clone)
+- [Setup](#setup)
   - [Programatic](#programatic)
   - [CLI](#cli)
   - [Docker](#docker)
   - [Docker compose](#docker-compose)
 - [Usage](#usage)
   - [Programatic](#programatic-1)
+  - [Via CLI](#via-cli)
   - [Via HTTP requests](#via-http-requests)
   - [From files](#from-files)
   - [Static files](#static-files)
@@ -54,13 +66,334 @@ then manually remove %5C from the routes
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Quick start
-
-### Programatic
+## Installation
 
 ```bash
 npm i -D @acrontum/moxy
 ```
+
+## Examples (see [the example folder](./example))
+
+### Simple server
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+
+const moxy = new MoxyServer();
+
+moxy.on('/api/cats', {
+  get: {
+    body: [
+      { name: 'alice', flavour: 'yellow' },
+      { name: 'bob', flavour: 'black' },
+      { name: 'cheshire', flavour: 'stripey' }
+    ]
+  }
+});
+
+moxy.on('/api/cats/alice', {
+  get: {
+    body: { 
+      name: 'alice', 
+      flavour: 'yellow'
+    }
+  }
+});
+
+moxy.listen(5000);
+
+// curl localhost:5000/api/cats
+//   -> 200 [{"name":"alice","flavour":"yellow"},{"name":"bob","flavour":"black"},{"name":"cheshire","flavour":"stripey"}]
+// curl localhost:5000/api/cats/alice
+//   -> 200 {"name":"alice","flavour":"yellow"}
+```
+
+### Use it in tests
+```typescript
+import { expect } from 'chai';
+import { after, afterEach, before } from 'mocha';
+import { default as supertest } from 'supertest';
+import { MoxyServer } from '@acrontum/moxy';
+import { MyApplication } from '../path/to/my/app/src';
+
+describe('API auth', () => {
+  const moxy: MoxyServer = new MoxyServer({ logging: 'error' });
+  let request: supertest.SuperTest<supertest.Test>;
+
+  before(async () => {
+    moxy.on('/auth/login', {
+      post: {
+        status: 200,
+        body: {
+          username: 'bob'
+        },
+        headers: {
+          'Set-Cookie': 'om-nom-nom;'
+        }
+      }
+    });
+    await moxy.listen(5001);
+
+    MyApplication.configure({ authUrl: 'http://localhost:5001' });
+    await MyApplication.start();
+
+    request = supertest(MyApplication.expressApp);
+  });
+
+  after(async () => {
+    await moxy.close({ closeConnections: true });
+    await MyApplication.stop();
+  });
+
+  it('can authenticate users', async () => {
+    await request.post('/v1/login').send({ username: 'bob', password: 'yes' })  
+      .expect(({ status, body }) => {
+        expect(status).equals(200);
+        expect(body).deep.equals({ username: 'bob' });
+      });
+
+    // no more spyOn(http.send)!
+    // test your full E2E http request flow
+    moxy.once('/auth/login', {
+      post: {
+        status: 401,
+        body: {
+          message: 'Unknown user or invalid password'
+        }
+      }
+    });
+
+    await request.post('/v1/login').send({ username: 'bob', password: 'yes' })  
+      .expect(({ status, body }) => {
+        expect(status).equals(401);
+        expect(body).equals('Failed to login');
+      });
+  });
+});
+```
+
+### Using variable replacement
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+
+const moxy = new MoxyServer();
+
+moxy.on('/echo/:name', {
+  get: {
+    status: 200,
+    body: {
+      hello: ':name'
+    },
+  }
+});
+
+moxy.on('/echo-with-slash/(?<pathWithSlash>.+)', {
+  get: {
+    status: 200,
+    body: {
+      hello: ':pathWithSlash'
+    },
+  }
+});
+
+moxy.listen(5000);
+
+// curl localhost:5000/echo/bob
+//   -> 200 {"hello":"bob"}
+
+// curl localhost:5000/echo-with-slash/this/will/be/in/the/body
+//   -> 200 {"hello":"this/will/be/in/the/body"}
+```
+
+### Configure a basic file server:
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+import { createWriteStream, promises } from 'fs';
+import { join, dirname, resolve } from 'path';
+
+const moxy = new MoxyServer();
+
+// simple file server (GET only)
+moxy.on('/v1/assets/:filename', './assets/:filename');
+
+// file server with upload
+moxy.on('/v1/database/:filename', {
+  get: './disk-db/:filename',
+  put: async (req, res, vars) => {
+    if (/\.\./.test(vars.filename)) {
+      return res.sendJson({ status: 422, message: 'Invalid filename' });
+    }
+
+    const outfile = join('./disk-db', vars.filename);
+    await promises.mkdir(resolve(dirname(outfile)), { recursive: true });
+
+    const output = createWriteStream(outfile, 'utf-8');
+    req.on('end', () => res.sendJson({ status: 201, message: 'ok' }));
+
+    req.pipe(output);
+  }
+});
+
+moxy.listen(5000);
+
+/*
+mkdir assets/
+echo 'hello world!' > assets/welcome.txt
+
+curl localhost:5000/v1/assets/hello.html
+#  -> 404
+
+curl localhost:5000/v1/assets/welcome.txt
+#  -> 200 hello world!
+
+
+curl localhost:5000/v1/database/passwords.txt
+#  -> 404
+
+curl -XPUT localhost:5000/v1/database/passwords.txt -d 'admin=super-secret'
+#  -> 201
+
+curl localhost:5000/v1/database/passwords.txt
+#  -> 200 admin=super-secret
+*/
+```
+
+### Use as a proxy
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+
+const moxy = new MoxyServer({ router: { allowHttpRouteConfig: true } });
+
+// transparent proxy moxy -> google
+moxy.on('/(?<path>.*)', {
+  proxy: 'https://www.google.ca/:path'
+});
+
+moxy.listen(5000);
+
+/*
+
+open http://localhost:5000/search?q=acrontum/moxy
+
+since we allowed httpConfig, we can do this from the browser devtools:
+
+fetch('http://localhost:5000/_moxy/routes', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    path: '/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png',
+    config: {
+      proxy: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Canada_%28Pantone%29.svg/255px-Flag_of_Canada_%28Pantone%29.svg.png'
+    }
+  })
+});
+
+and now when we refresh, the google logo is a Canada flag (much better, eh?)
+*/
+```
+
+### Use it to serve a local folder as a git repo (eg in tests which depend on a `git clone`)
+
+```typescript
+import { HandlerVariables, MoxyRequest, MoxyResponse, MoxyServer } from '@acrontum/moxy';
+import { exec, spawn } from 'child_process';
+import { existsSync } from 'fs';
+import { rm } from 'fs/promises';
+import { join } from 'path';
+import { Readable } from 'stream';
+import { promisify } from 'util';
+
+const moxy = new MoxyServer();
+
+const run = promisify(exec);
+
+const pack = (service: string) => {
+  const name = `# service=${service}\n`;
+  const len = (4 + name.length).toString(16);
+
+  return `${Array(4 - len.length + 1).join('0')}${len}${name}0000`;
+};
+
+const getRepo = (repoName: string) => join('./repos', repoName.replace('.git', ''));
+
+moxy.on('/projects/:repo/info/refs\\?service=:service', {
+  get: async (req: MoxyRequest, res: MoxyResponse, vars: HandlerVariables): Promise<MoxyResponse> => {
+    const repo = getRepo(vars.repo as string);
+    const service = vars.service as string;
+
+    if (!existsSync(repo)) {
+      return res.sendJson({ status: 404, body: 'Not found', vars });
+    }
+
+    try {
+      if (!existsSync(join(repo, '.git'))) {
+        await run(`git init -q && git add -A && git commit -am init`, { cwd: repo });
+      } else {
+        await run(`git add -A && git commit -am init || echo 'up to date'`, { cwd: repo });
+      }
+
+      res.writeHead(200, {
+        'Content-Type': `application/x-${service}-advertisement`,
+        'Cache-Control': 'no-cache',
+      });
+      res.write(pack(service));
+
+      const uploadPack = spawn(service, ['--stateless-rpc', '--advertise-refs', repo]);
+
+      return uploadPack.stdout.pipe(res);
+    } catch (e) {
+      console.error(e);
+    }
+
+    return res.sendJson({ status: 404, body: 'Not found', vars });
+  },
+});
+
+moxy.on('/projects/:repo/git-upload-pack', {
+  post: async (req: MoxyRequest, res: MoxyResponse, vars: HandlerVariables): Promise<MoxyResponse> => {
+    const repo = getRepo(vars.repo as string);
+
+    if (!existsSync(repo)) {
+      return res.sendJson({ status: 404, body: 'Not found', vars });
+    }
+
+    try {
+      res.writeHead(200, {
+        'Content-Type': 'application/x-git-upload-pack-response',
+        'Cache-Control': 'no-cache',
+      });
+
+      const proc = spawn(`git-upload-pack`, ['--stateless-rpc', repo]);
+
+      const stream = new Readable();
+      stream.push(await req.body);
+      stream.push(null);
+
+      stream.pipe(proc.stdin);
+
+      proc.stdout.on('end', () => rm(join(repo, '.git'), { recursive: true }).catch(console.error));
+
+      return proc.stdout.pipe(res);
+    } catch (e) {
+      console.error(e);
+    }
+
+    return res.sendJson({ status: 404, body: 'Not found', vars });
+  },
+});
+
+moxy.listen(5000);
+
+/*
+git clone http://localhost:5000/projects/server.git
+git clone http://localhost:5000/projects/app
+*/
+```
+
+
+## Setup
+
+### Programatic
+
 
 ```typescript
 import { MoxyServer } from '@acrontum/moxy';
@@ -83,7 +416,17 @@ await moxy.listen(5000);
 ### CLI
 
 ```bash
-npx @acrontum/moxy --port 5000 --routes ./routes/
+npx @acrontum/moxy --port 5000 --on '{
+  "path": "hello/world",
+  "config": {
+    "get": {
+      "status": 200,
+      "body": {
+        "message": "Welcome!"
+      }
+    }
+  }
+}'
 ```
 
 ### Docker
@@ -94,6 +437,8 @@ docker run \
   --publish 5000:5000 \
   --volume $PWD/routes:/opt/routes \
    acrontum/moxy --port 5000 --routes /opt/routes
+
+# OR acrontum/moxy --port 5000 --on '{ "path": "hello/world", "config": { "get": { "status":200, "body":{ "message":"Welcome!" } } } }'
 ```
 
 ### Docker compose
@@ -117,7 +462,7 @@ services:
 
 ## Usage
 
-The example config (found [here](./example/)) has configuration options with comments.
+The example config (found [here](./example/example-routing/example.routes.ts)) has configuration options with comments.
 
 ### Programatic
 
@@ -154,7 +499,7 @@ moxy.onAll('/auth/', {
   },
   '/logout/': {
     post: {
-      stauts: 204
+      status: 204
     }
   },
   '/register/': {
@@ -165,10 +510,19 @@ moxy.onAll('/auth/', {
   }
 });
 
-// handle all methods with an HTTP request handler
+// handle all HTTP verbs with a request handler
 moxy.on('/not/a/test', (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => {
   console.log('Hi world.');
+
   return res.sendJson({ pewPew: 'lazors' });
+});
+
+moxy.on('/still/not/a/test', {
+  patch: (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => {
+    console.log('Updating the world.');
+
+    return res.sendJson({ pewPew: 'lazors' });
+  }
 });
 
 // load from filesystem
@@ -253,7 +607,7 @@ curl localhost:5000/pew/pew
 
 # 404
 curl localhost:5000/pew/pew
-````
+```
 
 Note that you will not be able to configure the response using a function via HTTP.
 
@@ -328,17 +682,16 @@ export const routes = {
   '/static/(?<file>.*)': {
     get: '/public/:file',
   },
-  '/assets/(?<file>.*)': {
-    get: '/images/:file',
-  }
+  // same thing, just short form
+  '/assets/(?<file>.*)': '/images/:file'
 }
 
 // or
 
 moxy
   .on('/static/(?<file>.*)', { get: '/public/:file' })
-  .on('/assets/(?<file>.*)', { get: '/images/:file' });
-````
+  .on('/assets/(?<file>.*)', '/images/:file');
+```
 
 With the above config, moxy will look in the `./public` folder for requests to `/static/path/to/file`, and the `./images` folder for requests to `/assets/path/to/file`.
 
