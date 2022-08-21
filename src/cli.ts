@@ -5,7 +5,7 @@ import { PathConfig } from './router';
 import { MoxyServer, ServerConfig } from './server';
 import { version } from '../package.json';
 
-interface CliConfig {
+export interface CliConfig {
   options: ServerConfig;
   routerFolders: string[];
   port: string;
@@ -60,7 +60,7 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
     case '-r':
     case '--routes':
       config.routerFolders.push(
-        ...assertNextArg('--routes', argv)
+        ...assertNextArg(arg, argv)
           .split(',')
           .map((f) => realpathSync(f))
       );
@@ -68,7 +68,7 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
 
     case '-o':
     case '--on':
-      const next = assertNextArg('--on', argv);
+      const next = assertNextArg(arg, argv);
       try {
         // fix for odd npx issue parsing json with literal newlines
         const newlineRemoved = next.replace(/([^\\])\\n/g, '$1');
@@ -80,7 +80,7 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
 
     case '-p':
     case '--port':
-      config.port = assertNextArg('--port', argv);
+      config.port = assertNextArg(arg, argv);
       break;
 
     case '-q':
