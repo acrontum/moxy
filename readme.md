@@ -212,22 +212,22 @@ moxy.on('/query(.*)', {
 
 moxy.listen(5000);
 
-// curl localhost:5000/echo/bob |pp
+// curl localhost:5000/echo/bob
 //   -> 200 {"hello":"bob"}
 
-// curl localhost:5000/echo/bob/and/jane |pp
+// curl localhost:5000/echo/bob/and/jane
 //   -> 404
 
-// curl localhost:5000/echo-with-slash/this/will/be/in/the/body |pp
+// curl localhost:5000/echo-with-slash/this/will/be/in/the/body
 //   -> 200 {"hello":"this/will/be/in/the/body"}
 
-// curl localhost:5000/query |pp
+// curl localhost:5000/query
 //   -> {"status":418,"query":{}}
 
-// curl 'localhost:5000/query?search=hello' |pp
+// curl 'localhost:5000/query?search=hello'
 //   -> {"youSearchedFor":"hello"}
 
-// curl 'localhost:5000/query?test=hello' |pp
+// curl 'localhost:5000/query?test=hello'
 //   -> {"status":418,"query":{"test":"hello"}}
 ```
 
