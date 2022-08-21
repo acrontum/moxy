@@ -68,7 +68,7 @@ export class MoxyResponse extends ServerResponse {
    * @return {MoxyResponse}
    */
   sendFile(filename: string, options?: SendOptions): MoxyResponse {
-    let filePath = path.join(process.cwd(), filename);
+    let filePath = path.join(process.cwd(), filename.replace(/\.\.\/?/g, ''));
 
     if (!fs.existsSync(filePath)) {
       const trimmed = filePath.replace(/\?.*/, '');

@@ -6,10 +6,6 @@ import { getId } from '../util';
 
 export class MoxyRequest extends IncomingMessage {
   /**
-   * A promise which resolves to the request body
-   */
-  body: Promise<Buffer>;
-  /**
    * Unique request UUID
    */
   id: string;
@@ -20,19 +16,29 @@ export class MoxyRequest extends IncomingMessage {
 
   #query: ParsedUrlQuery;
   #path: string;
+  #body: Promise<Buffer>;
 
   constructor(socket: Socket) {
     super(socket);
 
     this.id = getId();
     this.timestamp = Date.now();
+  }
 
-    this.body = new Promise((resolve) => {
-      const data: any[] = [];
+  /**
+   * A promise which resolves to the request body
+   */
+  get body(): Promise<Buffer> {
+    if (!this.#body) {
+      this.#body = new Promise((resolve) => {
+        const data: any[] = [];
 
-      this.on('data', (chunk) => data.push(chunk));
-      this.on('end', () => resolve(Buffer.concat(data)));
-    });
+        this.on('data', (chunk) => data.push(chunk));
+        this.on('end', () => resolve(Buffer.concat(data)));
+      });
+    }
+
+    return this.#body;
   }
 
   /**
