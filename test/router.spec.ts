@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { after, afterEach, before } from 'mocha';
 import { join, relative } from 'path';
 import { default as supertest } from 'supertest';
-import { routeConfig } from '../example/example-routing/example.routes';
+import { routeConfig } from '../examples/example-routing/example.routes';
 import { MoxyServer, PathConfig, RequestHandler } from '../src';
 
 describe(relative(process.cwd(), __filename), () => {

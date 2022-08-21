@@ -33,26 +33,24 @@ then manually remove %5C from the routes
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [Installation](#installation)
-- [Examples (see the example folder)](#examples-see-the-example-folder)
-  - [Simple server](#simple-server)
-  - [Use it in tests](#use-it-in-tests)
-  - [Using variable replacement](#using-variable-replacement)
-  - [Configure a basic file server:](#configure-a-basic-file-server)
-  - [Use as a proxy](#use-as-a-proxy)
-  - [Use it to serve a local folder as a git repo (eg in tests which depend on a `git clone`)](#use-it-to-serve-a-local-folder-as-a-git-repo-eg-in-tests-which-depend-on-a-git-clone)
-- [Setup](#setup)
+- [Quick Start](#quick-start)
+  - [Installation](#installation)
   - [Programatic](#programatic)
   - [CLI](#cli)
   - [Docker](#docker)
   - [Docker compose](#docker-compose)
-- [Usage](#usage)
-  - [Programatic](#programatic-1)
-  - [Via CLI](#via-cli)
+- [Examples (see the examples folder)](#examples-see-the-examples-folder)
+  - [Simple server](#simple-server)
+  - [Common config options](#common-config-options)
+  - [Use it in tests](#use-it-in-tests)
+  - [Using variable replacement](#using-variable-replacement)
+  - [Configure a basic file server](#configure-a-basic-file-server)
+  - [Use as a proxy](#use-as-a-proxy)
+  - [Serve a local folder as a git repo for cloning](#serve-a-local-folder-as-a-git-repo-for-cloning)
+  - [More](#more)
+- [Configuration](#configuration)
   - [Via HTTP requests](#via-http-requests)
   - [From files](#from-files)
-  - [Static files](#static-files)
-  - [More examples](#more-examples)
 - [API](#api)
   - [CLI options](#cli-options)
   - [HTTP API](#http-api)
@@ -66,15 +64,87 @@ then manually remove %5C from the routes
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Installation
+## Quick Start
+
+### Installation
 
 ```bash
 npm i -D @acrontum/moxy
 ```
 
-## Examples (see [the example folder](./example))
+### Programatic
+
+
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+
+const moxy = new MoxyServer();
+
+moxy.on('hello/world', {
+  get: {
+    status: 200,
+    body: {
+      message: 'Welcome!'
+    }
+  }
+});
+
+await moxy.listen(5000);
+```
+
+
+### CLI
+
+```bash
+# load from local routes folder, and add single get handler for /hello/world
+npx @acrontum/moxy --port 5000 --routes ./routes/ --on '{
+  "path": "hello/world",
+  "config": {
+    "get": {
+      "status": 418,
+      "body": {
+        "message": "I am a teapot"
+      }
+    }
+  }
+}'
+```
+
+### Docker
+
+```bash
+docker run \
+  --name moxy \
+  --publish 5000:5000 \
+  --volume $PWD/routes:/opt/routes \
+   acrontum/moxy --port 5000 --routes /opt/routes
+
+# OR acrontum/moxy --port 5000 --on '{ "path": "hello/world", "config": { "get": { "status":200, "body":{ "message":"Welcome!" } } } }'
+```
+
+### Docker compose
+
+```yaml
+version: "3.7"
+
+services:
+  moxy:
+    image: acrontum/moxy
+    container_name: moxy
+    volumes:
+      - ./routes:/opt/routes
+    environment:
+      - PORT=80
+    ports:
+      - 5000:80
+    init: true
+    command: --allow-http-config --routes /opt/routes
+```
+
+## Examples (see [the examples folder](./examples))
 
 ### Simple server
+
 ```typescript
 import { MoxyServer } from '@acrontum/moxy';
 
@@ -107,7 +177,81 @@ moxy.listen(5000);
 //   -> 200 {"name":"alice","flavour":"yellow"}
 ```
 
+### Common config options
+
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+
+// initialize with default settings (optional)
+const moxy = new MoxyServer({
+  logging: 'verbose',
+  router: {
+    allowHttpRouteConfig: false
+  }
+});
+
+// start listening on port 5000 (can be done before or after route configuration)
+await moxy.listen(5000);
+
+// configure listener for a GET /some/path, responding with a 200 and text body "Hi!"
+moxy.on('/some/path', {
+  get: {
+    status: 200,
+    body: 'Hi!',
+    headers: { 'Content-Type': 'text/plain' }
+  }
+});
+
+// configure multiple routes (/auth/login, /auth/logout, and /auth/register) by prefix:
+moxy.onAll('/auth/', {
+  '/login/': {
+    post: {
+      status: 401,
+      body: { message: 'Unauthorized' }
+    }
+  },
+  '/logout/': {
+    post: {
+      status: 204
+    }
+  },
+  '/register/': {
+    post: {
+      status: 201,
+      body: { message: 'welcome' }
+    }
+  }
+});
+
+// handle all HTTP verbs with a request handler
+moxy.on('/not/a/test', (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => {
+  console.log('Hi world.');
+
+  return res.sendJson({ pewPew: 'lazors' });
+});
+
+moxy.on('/still/not/a/test', {
+  patch: (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => {
+    console.log('Updating the world.');
+
+    return res.sendJson({ pewPew: 'lazors' });
+  }
+});
+
+// load from filesystem
+await moxy.router.addRoutesFromFolder('/path/to/my/routes');
+
+// using basic variable replacement, search in a static folder and return an image
+moxy.on('/users/:userId/profile-picture', '/static/images/:userId.png');
+
+// ... make requests against moxy
+
+// stop the server. closeConnections: true will close any active connections immediately instead of waiting for them.
+await moxy.close({ closeConnections: true });
+```
+
 ### Use it in tests
+
 ```typescript
 import { expect } from 'chai';
 import { after, afterEach, before } from 'mocha';
@@ -172,6 +316,7 @@ describe('API auth', () => {
 ```
 
 ### Using variable replacement
+
 ```typescript
 import { MoxyServer, MoxyRequest, MoxyResponse, HandlerVariables } from '@acrontum/moxy';
 
@@ -231,7 +376,8 @@ moxy.listen(5000);
 //   -> {"status":418,"query":{"test":"hello"}}
 ```
 
-### Configure a basic file server:
+### Configure a basic file server
+
 ```typescript
 import { MoxyServer, MoxyRequest, MoxyResponse, HandlerVariables } from '@acrontum/moxy';
 import { createWriteStream, promises } from 'fs';
@@ -284,6 +430,7 @@ curl localhost:5000/v1/database/secrets/passwords.txt
 ```
 
 ### Use as a proxy
+
 ```typescript
 import { MoxyServer } from '@acrontum/moxy';
 
@@ -317,7 +464,13 @@ and now when we refresh, the google logo is a Canada flag (much better, eh?)
 */
 ```
 
-### Use it to serve a local folder as a git repo (eg in tests which depend on a `git clone`)
+Or a 1-liner from the cli to spin up a quick proxy server
+
+```bash
+npx @acrontum/moxy --port 5000 --on '{ "path": "/(?<path>.*)", "config": { "proxy": "http://corporate.ca/:path" } }' --allow-http-config
+```
+
+### Serve a local folder as a git repo for cloning
 
 ```typescript
 import { HandlerVariables, MoxyRequest, MoxyResponse, MoxyServer } from '@acrontum/moxy';
@@ -409,321 +562,17 @@ git clone http://localhost:5000/projects/app
 */
 ```
 
+### More
 
-## Setup
+The [examples folder](./examples/) contains most of the examples above, as well as the [example config](./examples/example-routing/example.routes.ts) which has common configuration options with comments.
 
-### Programatic
-
-
-```typescript
-import { MoxyServer } from '@acrontum/moxy';
-
-const moxy = new MoxyServer();
-
-moxy.on('hello/world', {
-  get: {
-    status: 200,
-    body: {
-      message: 'Welcome!'
-    }
-  }
-});
-
-await moxy.listen(5000);
-```
-
-
-### CLI
-
-```bash
-npx @acrontum/moxy --port 5000 --on '{
-  "path": "hello/world",
-  "config": {
-    "get": {
-      "status": 200,
-      "body": {
-        "message": "Welcome!"
-      }
-    }
-  }
-}'
-```
-
-### Docker
-
-```bash
-docker run \
-  --name moxy \
-  --publish 5000:5000 \
-  --volume $PWD/routes:/opt/routes \
-   acrontum/moxy --port 5000 --routes /opt/routes
-
-# OR acrontum/moxy --port 5000 --on '{ "path": "hello/world", "config": { "get": { "status":200, "body":{ "message":"Welcome!" } } } }'
-```
-
-### Docker compose
-
-```yaml
-version: "3.7"
-
-services:
-  moxy:
-    image: acrontum/moxy
-    container_name: moxy
-    volumes:
-      - ./routes:/opt/routes
-    environment:
-      - PORT=80
-    ports:
-      - 5000:80
-    init: true
-    command: --allow-http-config --routes /opt/routes
-```
-
-## Usage
-
-The example config (found [here](./example/example-routing/example.routes.ts)) has configuration options with comments.
-
-### Programatic
-
-```typescript
-import { MoxyServer } from '@acrontum/moxy';
-
-// initialize with default settings (optional)
-const moxy = new MoxyServer({
-  logging: 'verbose',
-  router: {
-    allowHttpRouteConfig: false
-  }
-});
-
-// start listening on port 5000 (can be done before or after route configuration)
-await moxy.listen(5000);
-
-// configure listener for a GET /some/path, responding with a 200 and text body "Hi!"
-moxy.on('/some/path', {
-  get: {
-    status: 200,
-    body: 'Hi!',
-    headers: { 'Content-Type': 'text/plain' }
-  }
-});
-
-// configure multiple routes (/auth/login, /auth/logout, and /auth/register) by prefix:
-moxy.onAll('/auth/', {
-  '/login/': {
-    post: {
-      status: 401,
-      body: { message: 'Unauthorized' }
-    }
-  },
-  '/logout/': {
-    post: {
-      status: 204
-    }
-  },
-  '/register/': {
-    post: {
-      status: 201,
-      body: { message: 'welcome' }
-    }
-  }
-});
-
-// handle all HTTP verbs with a request handler
-moxy.on('/not/a/test', (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => {
-  console.log('Hi world.');
-
-  return res.sendJson({ pewPew: 'lazors' });
-});
-
-moxy.on('/still/not/a/test', {
-  patch: (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => {
-    console.log('Updating the world.');
-
-    return res.sendJson({ pewPew: 'lazors' });
-  }
-});
-
-// load from filesystem
-await moxy.router.addRoutesFromFolder('/path/to/my/routes');
-
-// using basic variable replacement, search in a static folder and return an image
-moxy.on('/users/:userId/profile-picture', '/static/images/:userId.png');
-
-// ... make requests against moxy
-
-// stop the server. closeConnections: true will not wait for any requests to finish.
-await moxy.close({ closeConnections: true });
-```
-
-See [API](#api) for full usage.
-
-### Via CLI
-
-```bash
-# load from local routes folder, and add single get handler for /hello/world
-npx @acrontum/moxy --port 5000 --routes ./routes/ --on '{
-  "path": "hello/world",
-  "config": {
-    "get": {
-      "status": 418,
-      "body": {
-        "message": "I am a teapot"
-      }
-    }
-  }
-}'
-```
-
-### Via HTTP requests
-
-Assuming moxy is running at localhost:5000, and has [HTTP config](https://acrontum.github.io/moxy/interfaces/ServerConfig.html#router) enabled:
-
-```bash
-# hit the moxy api
-curl localhost:5000/_moxy/
-
-# add a new handler that responds to GET /test/path with a 204 no content
-curl localhost:5000/_moxy/routes \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "path": "/test/path",
-    "config": {
-      "get": {
-        "status": 200,
-        "body": "neat"
-      }
-    }
-  }'
-
-# will show the array of paths avaiable
-curl localhost:5000/_moxy/routes
-
-# will show paths and their handler object currently configured
-curl localhost:5000/_moxy/router
-
-# test our new route
-curl localhost:5000/test/path
-
-# remove our new route
-curl -X DELETE localhost:5000/_moxy/routes/test/path
-
-# add a "once" route handler
-curl localhost:5000/_moxy/routes?once=true \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "path": "/pew/pew",
-    "config": {
-      "get": {
-        "status": 200,
-        "body": "neat"
-      }
-    }
-  }'
-
-# 200
-curl localhost:5000/pew/pew
-
-# 404
-curl localhost:5000/pew/pew
-```
-
-Note that you will not be able to configure the response using a function via HTTP.
-
-See [API](#api) for full usage.
-
-### From files
-
-Moxy can load routing configs from the filesystem, searching recursively for `.js` or `.json` files matching `<anything>.routes.js(on)`. This allows you to organize routes into files, and put them in a routes folder (see [example](./example/)).
-
-```typescript
-await moxy.router.addRoutesFromFolder('/path/to/routes/folder');
-```
-
-```bash
-# npx cli
-npx @acrontum/moxy --routes /path/to/routes/folder
-
-# docker run
-docker run acrontum/moxy --routes /path/to/routes/folder
-```
-
-```yaml
-version: "3.7"
-
-services:
-  moxy:
-    image: acrontum/moxy
-    volumes:
-      - ./routes:/opt/routes
-    command: --routes /opt/routes
-```
-
-When loading routes from folders, the tree structure will determine the routing. For instance, if your folder structure looks like this:
-```
-public/
-├── routes
-│   ├── a
-│   │   ├── a.routes.js
-│   │   └── b
-│   │       └── b.routes.js
-│   └── c
-│       └── c.routes.json
-└── static
-    ├── css
-    ├── js
-    └── index.html
-```
-
-And you loaded the `public` folder into moxy's router, your route config would look like:
-```json
-{
-  "/public/routes/a/": "...config from a.routes.js file",
-  "/public/routes/a/b/": "...config from b.routes.js file",
-  "/public/routes/c": "...config from c.routes.json file"
-}
-```
-
-If you instead loaded the `a` folder, it would look like:
-```json
-{
-  "/a/": "...config from a.routes.js file",
-  "/a/b/": "...config from b.routes.js file",
-}
-```
-
-### Static files
-
-When you configure a method to be a string, moxy will serve files from disk:
-
-```typescript
-export const routes = {
-  '/static/(?<file>.*)': {
-    get: '/public/:file',
-  },
-  // same thing, just short form
-  '/assets/(?<file>.*)': '/images/:file'
-}
-
-// or
-
-moxy
-  .on('/static/(?<file>.*)', { get: '/public/:file' })
-  .on('/assets/(?<file>.*)', '/images/:file');
-```
-
-With the above config, moxy will look in the `./public` folder for requests to `/static/path/to/file`, and the `./images` folder for requests to `/assets/path/to/file`.
-
-These are relative to the process's current directory, so if you ran from this folder it would look in `./images` and `./public` and try to return the file.
-
-### More examples
-
-example config (found [here](./example/)):
+The [example config](./examples/example-routing/example.routes.ts):
 
 ```typescript
 import { HandlerVariables, MoxyRequest, MoxyResponse, Routes } from '@acrontum/moxy';
 
+// The export name is unused, so it can be anything. Moxy will use the path to the file and the values of the Routes to
+// configure the routing.
 export const routeConfig: Routes = {
   // example using basic path params and replacements.
   '/:machineId/measurements/:measurementId': {
@@ -746,13 +595,17 @@ export const routeConfig: Routes = {
       },
     },
   },
-  // The more complicated method is using regex capture groups. This allows for
-  // more control over how groups are captured (eg for matching slashes in the
-  // path.
+  // The more complicated method is using regex capture groups. This allows for more control over how groups are
+  // captured (eg for matching slashes in the path).
   '/static/(?<file>.*)': {
     // When the value for a method is a simple string, a file is assumed.
     get: '/public/:file',
   },
+  // This is the short form of the above:
+  '/assets/(?<file>.*)': '/www-data/:file',
+  // With the above 2 configs, moxy will look in the `./public` folder for requests to `/static/path/to/file`, and the
+  // `./www-data` folder for requests to `/assets/path/to/file`. These are relative to the process's current directory,
+  // so if you ran from this folder it would look in `./images` and `./public` and try to return the file.
   'auth/login': {
     post: {
       status: 200,
@@ -824,17 +677,16 @@ export const routeConfig: Routes = {
     },
   },
   // passing exact: true will prevent the path from being converted to a regex.
-  // NOTE: this will also disable simple or regex replacements. Parsed query
-  // params will still be returned in HandlerVariables if you use a request
-  // handler (see below).
+  // NOTE: this will also disable simple or regex replacements. Parsed query params will still be returned in
+  // HandlerVariables if you use a request handler (see below).
   '/exact/match/:notCaptured?queryMustHave': {
     exact: true,
     get: {
       status: 204,
     },
   },
-  // if the handler would normally be a function and exact matching is desired,
-  // the 'all' method can be used to achieve this.
+  // if the handler would normally be a function and exact matching is desired,the 'all' method can be used to achieve
+  // this.
   '/exact/match/handler?ignore=(.*)': {
     exact: true,
     all: (request: MoxyRequest, response: MoxyResponse, variables: HandlerVariables) => {
@@ -842,6 +694,144 @@ export const routeConfig: Routes = {
     },
   },
 };
+```
+
+See [API](#api) for full usage.
+
+
+## Configuration
+
+### Via HTTP requests
+
+Assuming moxy is running at localhost:5000, and has [HTTP config](https://acrontum.github.io/moxy/interfaces/ServerConfig.html#router) enabled:
+
+```bash
+# hit the moxy api
+curl localhost:5000/_moxy/
+
+# add a new handler that responds to GET /test/path with a 200 and text/plain "neat" response
+curl localhost:5000/_moxy/routes \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "path": "/test/path",
+    "config": {
+      "get": {
+        "status": 200,
+        "body": "neat"
+      }
+    }
+  }'
+
+# will show the array of paths avaiable
+curl localhost:5000/_moxy/routes
+
+# will show paths and their handler object currently configured
+curl localhost:5000/_moxy/router
+
+# test our new route
+curl localhost:5000/test/path
+
+# remove our new route
+curl -X DELETE localhost:5000/_moxy/routes/test/path
+
+# add a "once" route handler
+curl localhost:5000/_moxy/routes?once=true \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "path": "/pew/pew",
+    "config": {
+      "get": {
+        "status": 200,
+        "body": "neat"
+      }
+    }
+  }'
+
+# 200
+curl localhost:5000/pew/pew
+
+# 404
+curl localhost:5000/pew/pew
+```
+
+Note that you will not be able to configure the response using a function via HTTP.
+
+See [API](#api) for full usage.
+
+### From files
+
+Moxy can load routing configs from the filesystem, searching recursively for `.js` or `.json` files matching `<anything>.routes.js(on)`. This allows you to organize routes into files, and put them in a routes folder (as shown in the [example-routing folder](./examples/example-routing/)).
+
+```typescript
+await moxy.router.addRoutesFromFolder('/path/to/routes/folder');
+```
+
+```bash
+# npx cli
+npx @acrontum/moxy --routes /path/to/routes/folder
+
+# docker run
+docker run acrontum/moxy --routes /path/to/routes/folder
+```
+
+```yaml
+version: "3.7"
+
+services:
+  moxy:
+    image: acrontum/moxy
+    volumes:
+      - ./routes:/opt/routes
+    command: --routes /opt/routes
+```
+
+When loading routes from folders, the tree structure will determine the routing. For instance, if your folder structure looks like this:
+```
+public/
+├── routes
+│   ├── a
+│   │   ├── a.routes.js
+│   │   └── b
+│   │       └── b.routes.js
+│   └── c
+│       └── c.routes.json
+└── static
+    ├── css
+    ├── js
+    └── index.html
+```
+
+And you loaded the `public` folder into moxy's router like so:
+
+```bash
+npx @acrontum/moxy --port 5000 --routes ./public
+```
+or
+```typescript
+import { MoxyServer } from '@acrontum/moxy';
+
+const moxy = new MoxyServer();
+
+moxy.loadConfigFromFile('./public');
+
+moxy.listen(5000);
+```
+
+then your route config would look like:
+```json
+{
+  "/public/routes/a/": "...config from a.routes.js file",
+  "/public/routes/a/b/": "...config from b.routes.js file",
+  "/public/routes/c": "...config from c.routes.json file"
+}
+```
+
+If you instead loaded the `a` folder (eg. `--routes ./public/a/`, it would look like:
+```json
+{
+  "/a/": "...config from a.routes.js file",
+  "/a/b/": "...config from b.routes.js file",
+}
 ```
 
 ## API
@@ -869,7 +859,7 @@ options:
 
 ### HTTP API
 
-Moxy exposes some default HTTP routes for checking routing configurations. With [`allowHttpRouteConfig`](https://acrontum.github.io/moxy/interfaces/ServerConfig.html#router) enabled:
+Moxy exposes some HTTP routes for checking routing configurations. With [`allowHttpRouteConfig`](https://acrontum.github.io/moxy/interfaces/ServerConfig.html#router) enabled it will also expose HTTP CRUD routes:
 
 ```typescript
 const server = new MoxyServer({ router: { allowHttpRouteConfig: true } });
@@ -878,26 +868,20 @@ const server = new MoxyServer({ router: { allowHttpRouteConfig: true } });
 npx @acrontum/moxy --allow-http-config
 ```
 
-it will also expose HTTP CRUD routes.
-
-The HTTP API offers most of the functionality that programatic or file configs offer, although it is not possible to send request handler methods at this time.
+The HTTP API offers most of the functionality that programatic or file configs offer, although it is not possible to create and handler as a function at this time.
 
 #### GET /\_moxy:
 
 Returns the list of api methods:
-```
-{
-  "GET /router?once=false&serializeMethods=true": "show router",
-  "GET /routes?once=false": "show router routes"
-}
- - or -
+```js
 {
   "GET /router?once=false&serializeMethods=true": "show router",
   "GET /routes?once=false": "show router routes",
+  // below are only available with '--allow-http-config'
   "POST /routes?once=false": "create route",
   "PUT /routes/:route": "create or update route",
   "PATCH /routes/:route": "update route",
-  "DELETE /routes/:route": "delete route",
+  "DELETE /routes/:route": "delete route"
 }
 
 ```
@@ -909,8 +893,6 @@ Display a list of routes which moxy is listening to with default query params (i
 Query params:
 
 `once=true`: Show routes which will fire once then be removed (eg for testing).
-
-`serializeMethods=false`: Don't call `.toString()` on methods (removes some noise).
 
 #### GET /\_moxy/router
 
@@ -942,7 +924,7 @@ Query params:
 
 `once=true`: As soon as this route is hit, remove it.
 
-The response will be a 200 containing the newly added route.
+The response will be a 201 containing the newly added route.
 
 #### PATCH /\_moxy/router/:route
 
@@ -958,7 +940,7 @@ Will replace the route specified by `:route` (`:route` will match everything aft
 
 Payload: [`RouteConfig`](https://acrontum.github.io/moxy/index.md#routeconfig).
 
-The response will be a 200 or 201 containing the created or updated route.
+The response will be a 201, or 200 if a route was replaced.
 
 #### DELETE /\_moxy/router/:route
 
