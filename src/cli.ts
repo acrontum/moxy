@@ -36,6 +36,7 @@ export const assertNextArg = (name: string, argv: string[]): string => {
   return next;
 };
 
+/* eslint-disable-next-line max-lines-per-function */
 export const getOption = (config: CliConfig, argv?: string[]): number => {
   if (!argv?.length) {
     return 0;
@@ -69,9 +70,11 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
     case '--on':
       const next = assertNextArg('--on', argv);
       try {
-        config.configs.push(JSON.parse(next) as { path: string; config: PathConfig });
+        // fix for odd npx issue parsing json with literal newlines
+        const newlineRemoved = next.replace(/([^\\])\\n/g, '$1');
+        config.configs.push(JSON.parse(newlineRemoved) as { path: string; config: PathConfig });
       } catch (e) {
-        throw new Error(`Invalid --on argument: '${next}'`);
+        throw new Error(`Error parsing --on argument: '${next}'\n${(e as Error)?.message}`);
       }
       break;
 
