@@ -181,6 +181,11 @@ describe(relative(process.cwd(), __filename), () => {
   });
 
   it('POST /_moxy/routes - can create routes', async () => {
+    await request.get('/_moxy/routes').expect(({ status, body }) => {
+      expect(status).equals(200);
+      expect(body).deep.equals([]);
+    });
+
     // programatic
     moxy.on('/brew', basicRouteConfig);
 
@@ -196,15 +201,21 @@ describe(relative(process.cwd(), __filename), () => {
 
     moxy.once('/brew', updatedRouteConfig);
 
-    await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
-    });
+    await request
+      .get('/_moxy/routes')
+      .query({ once: true })
+      .expect(({ status, body }) => {
+        expect(status).equals(200);
+        expect(body).deep.equals(['/brew']);
+      });
 
-    await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': basicRouteConfig });
-    });
+    await request
+      .get('/_moxy/router')
+      .query({ once: true })
+      .expect(({ status, body }) => {
+        expect(status).equals(200);
+        expect(body).deep.equals({ '/brew': updatedRouteConfig });
+      });
 
     moxy.resetRoutes();
 
@@ -262,6 +273,54 @@ describe(relative(process.cwd(), __filename), () => {
         expect(status).equals(200);
         expect(body).deep.equals({ '/brew': { get: basicRouteConfig.post } });
       });
+
+    moxy.resetRoutes();
+
+    await request.get('/_moxy/routes').expect(({ status, body }) => {
+      expect(status).equals(200);
+      expect(body).deep.equals([]);
+    });
+
+    await request
+      .get('/_moxy/routes')
+      .query({ once: true })
+      .expect(({ status, body }) => {
+        expect(status).equals(200);
+        expect(body).deep.equals([]);
+      });
+
+    // programatic
+    moxy.on('/brew/:file', '/data/:file');
+
+    await request.get('/_moxy/routes').expect(({ status, body }) => {
+      expect(status).equals(200);
+      expect(body).deep.equals(['/brew/:file']);
+    });
+
+    await request.get('/_moxy/router').expect(({ status, body }) => {
+      expect(status).equals(200);
+      expect(body).deep.equals({ '/brew/:file': { get: '/data/:file' } });
+    });
+
+    moxy.once('/brew/:file', '/www-data/:file');
+
+    await request
+      .get('/_moxy/routes')
+      .query({ once: true })
+      .expect(({ status, body }) => {
+        expect(status).equals(200);
+        expect(body).deep.equals(['/brew/:file']);
+      });
+
+    await request
+      .get('/_moxy/router')
+      .query({ once: true })
+      .expect(({ status, body }) => {
+        expect(status).equals(200);
+        expect(body).deep.equals({ '/brew/:file': { get: '/www-data/:file' } });
+      });
+
+    // http
   });
 
   it('PUT /_moxy/routes/:route - can create or replace a route', async () => {

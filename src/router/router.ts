@@ -81,8 +81,11 @@ export class Router {
 
     if (typeof config === 'function') {
       this.routes[path] = compiledRoute;
+    } else if (typeof config === 'string') {
+      this.routes[path] = { ...(compiledRoute as PathConfig) };
+      delete compiledRoute.urlRegex;
     } else {
-      this.routes[path] = { ...(this.routes[path] || {}), ...compiledRoute };
+      this.routes[path] = { ...((this.routes[path] as PathConfig) || {}), ...(compiledRoute as PathConfig) };
       delete compiledRoute.urlRegex;
     }
 
@@ -252,11 +255,14 @@ export class Router {
    * @return {ParsedPathConfig}  The parsed path configuration
    */
   #compileRoute(fullPath: string, config: RouteConfig, options?: AddRouteOptions): ParsedPathConfig {
-    if (typeof config === 'string' || typeof config === 'boolean') {
+    if (typeof config === 'boolean') {
       return config;
     }
 
-    const parsed = config as PathConfigWithOptions;
+    let parsed = config as PathConfigWithOptions;
+    if (typeof config === 'string') {
+      parsed = { get: config };
+    }
 
     if (!options?.exact && !(config as PathConfig)?.exact) {
       const pathWithGroups = this.#routerNet.parsePlaceholderParams(fullPath);

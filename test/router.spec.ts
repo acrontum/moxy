@@ -62,6 +62,7 @@ describe(relative(process.cwd(), __filename), () => {
       expect(body).deep.equals([
         '/example-routing/:machineId/measurements/:measurementId',
         '/example-routing/static/(?<file>.*)',
+        '/example-routing/assets/(?<file>.*)',
         '/example-routing/auth/login',
         '/example-routing/users/:username',
         '/example-routing/proxied-server(?<path>.*)',
@@ -88,6 +89,9 @@ describe(relative(process.cwd(), __filename), () => {
         },
         '/example-routing/static/(?<file>.*)': {
           get: '/test/:file',
+        },
+        '/example-routing/assets/(?<file>.*)': {
+          get: '/www-data/:file',
         },
         '/example-routing/auth/login': {
           post: {

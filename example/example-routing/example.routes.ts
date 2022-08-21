@@ -29,6 +29,8 @@ export const routeConfig: Routes = {
     // When the value for a method is a simple string, a file is assumed.
     get: '/public/:file',
   },
+  // This is the short form of the above:
+  '/assets/(?<file>.*)': '/www-data/:file',
   'auth/login': {
     post: {
       status: 200,

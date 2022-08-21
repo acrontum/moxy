@@ -84,7 +84,7 @@ export type PathConfig = PathSettings & { all?: MethodConfig } & { [key in Metho
 /**
  * Configuration for a route.
  */
-export type RouteConfig = RequestHandler | PathConfig;
+export type RouteConfig = string | RequestHandler | PathConfig;
 
 /**
  * Configuration for multiple routes.
