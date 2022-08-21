@@ -173,7 +173,7 @@ describe('API auth', () => {
 
 ### Using variable replacement
 ```typescript
-import { MoxyServer } from '@acrontum/moxy';
+import { MoxyServer, MoxyRequest, MoxyResponse, HandlerVariables } from '@acrontum/moxy';
 
 const moxy = new MoxyServer();
 
@@ -195,30 +195,57 @@ moxy.on('/echo-with-slash/(?<pathWithSlash>.+)', {
   }
 });
 
+moxy.on('/query\\?search=:querySearch', {
+  get: {
+    status: 200,
+    body: {
+      youSearchedFor: ':querySearch'
+    },
+  }
+});
+
+moxy.on('/query(.*)', {
+  get: (req: MoxyRequest, res: MoxyResponse, vars: HandlerVariables) => {
+    return res.sendJson({ status: 418, query: vars });
+  }
+});
+
 moxy.listen(5000);
 
-// curl localhost:5000/echo/bob
+// curl localhost:5000/echo/bob |pp
 //   -> 200 {"hello":"bob"}
 
-// curl localhost:5000/echo-with-slash/this/will/be/in/the/body
+// curl localhost:5000/echo/bob/and/jane |pp
+//   -> 404
+
+// curl localhost:5000/echo-with-slash/this/will/be/in/the/body |pp
 //   -> 200 {"hello":"this/will/be/in/the/body"}
+
+// curl localhost:5000/query |pp
+//   -> {"status":418,"query":{}}
+
+// curl 'localhost:5000/query?search=hello' |pp
+//   -> {"youSearchedFor":"hello"}
+
+// curl 'localhost:5000/query?test=hello' |pp
+//   -> {"status":418,"query":{"test":"hello"}}
 ```
 
 ### Configure a basic file server:
 ```typescript
-import { MoxyServer } from '@acrontum/moxy';
+import { MoxyServer, MoxyRequest, MoxyResponse, HandlerVariables } from '@acrontum/moxy';
 import { createWriteStream, promises } from 'fs';
 import { join, dirname, resolve } from 'path';
 
 const moxy = new MoxyServer();
 
-// simple file server (GET only)
+// simple file server (GET only, no nested paths)
 moxy.on('/v1/assets/:filename', './assets/:filename');
 
 // file server with upload
-moxy.on('/v1/database/:filename', {
+moxy.on('/v1/database/(?<filename>.+)', {
   get: './disk-db/:filename',
-  put: async (req, res, vars) => {
+  put: async (req: MoxyRequest, res: MoxyResponse, vars: HandlerVariables) => {
     if (/\.\./.test(vars.filename)) {
       return res.sendJson({ status: 422, message: 'Invalid filename' });
     }
@@ -245,14 +272,13 @@ curl localhost:5000/v1/assets/hello.html
 curl localhost:5000/v1/assets/welcome.txt
 #  -> 200 hello world!
 
-
-curl localhost:5000/v1/database/passwords.txt
+curl localhost:5000/v1/database/secrets/passwords.txt
 #  -> 404
 
-curl -XPUT localhost:5000/v1/database/passwords.txt -d 'admin=super-secret'
+curl -XPUT localhost:5000/v1/database/secrets/passwords.txt -d 'admin=super-secret'
 #  -> 201
 
-curl localhost:5000/v1/database/passwords.txt
+curl localhost:5000/v1/database/secrets/passwords.txt
 #  -> 200 admin=super-secret
 */
 ```
