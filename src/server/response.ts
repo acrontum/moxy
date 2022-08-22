@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { OutgoingHttpHeaders, ServerResponse } from 'http';
 import * as path from 'path';
+import { extToMimeType } from '../util';
 import { MoxyRequest } from './request';
 
 export interface SendOptions {
@@ -17,23 +18,6 @@ export class MoxyResponse extends ServerResponse {
    * Request duration in ms
    */
   duration: number;
-  /**
-   * Mapping of file extention to mime type
-   */
-  extToMimeType: Record<string, string> = {
-    '.css': 'text/css',
-    '.csv': 'text/csv',
-    '.html': 'text/html',
-    '.txt': 'text/plain',
-    '.xml': 'text/xml',
-    '.gif': 'image/gif',
-    '.jpeg': 'image/jpeg',
-    '.jpg': 'image/jpeg',
-    '.js': 'application/x-javascript',
-    '.bmp': 'image/x-ms-bmp',
-    '.ico': 'image/x-icon',
-    '.png': 'image/png',
-  };
 
   #chunks: any[] = [];
 
@@ -117,7 +101,9 @@ export class MoxyResponse extends ServerResponse {
    * @return {string}
    */
   getContentTypeFromFileExt(filename: string): string {
-    return this.extToMimeType[path.extname(filename)] || 'application/octet-stream';
+    const ext = path.extname(filename);
+
+    return extToMimeType[ext] || `application/x-${ext.slice(1)}`;
   }
 
   /**
