@@ -17,6 +17,23 @@ export class MoxyResponse extends ServerResponse {
    * Request duration in ms
    */
   duration: number;
+  /**
+   * Mapping of file extention to mime type
+   */
+  extToMimeType: Record<string, string> = {
+    '.css': 'text/css',
+    '.csv': 'text/csv',
+    '.html': 'text/html',
+    '.txt': 'text/plain',
+    '.xml': 'text/xml',
+    '.gif': 'image/gif',
+    '.jpeg': 'image/jpeg',
+    '.jpg': 'image/jpeg',
+    '.js': 'application/x-javascript',
+    '.bmp': 'image/x-ms-bmp',
+    '.ico': 'image/x-icon',
+    '.png': 'image/png',
+  };
 
   #chunks: any[] = [];
 
@@ -100,21 +117,7 @@ export class MoxyResponse extends ServerResponse {
    * @return {string}
    */
   getContentTypeFromFileExt(filename: string): string {
-    const mimes: Record<string, string> = {
-      '.html': 'text/html',
-      '.css': 'text/css',
-      '.xml': 'text/xml',
-      '.gif': 'image/gif',
-      '.jpeg': 'image/jpeg',
-      '.jpg': 'image/jpeg',
-      '.js': 'application/x-javascript',
-      '.txt': 'text/plain',
-      '.png': 'image/png',
-      '.ico': 'image/x-icon',
-      '.bmp': 'image/x-ms-bmp',
-    };
-
-    return mimes[path.extname(filename)] || 'application/octet-stream';
+    return this.extToMimeType[path.extname(filename)] || 'application/octet-stream';
   }
 
   /**
@@ -173,11 +176,13 @@ export class MoxyResponse extends ServerResponse {
    *
    * @param {any[]}  args  The arguments
    */
-  end(...args: any[]): void {
+  end(...args: any[]): MoxyResponse {
     super.end(...args);
 
     if (args[0]) {
       this.#chunks.push(Buffer.from(args[0]));
     }
+
+    return this;
   }
 }
