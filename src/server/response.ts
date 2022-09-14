@@ -173,11 +173,13 @@ export class MoxyResponse extends ServerResponse {
    *
    * @param {any[]}  args  The arguments
    */
-  end(...args: any[]): void {
+  end(...args: any[]): MoxyResponse {
     super.end(...args);
 
     if (args[0]) {
       this.#chunks.push(Buffer.from(args[0]));
     }
+
+    return this;
   }
 }
