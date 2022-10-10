@@ -299,17 +299,26 @@ describe(relative(process.cwd(), __filename), () => {
       get: { status: 200 },
       post: {
         status: 201,
-        delay: 100,
+        delay: 50,
       },
     });
 
     let start = Date.now();
     await request.get('/test').expect(200);
-    expect(Date.now() - start < 100).equals(true);
+    expect(Date.now() - start < 50).equals(true);
 
     start = Date.now();
     await request.post('/test').expect(201);
-    expect(Date.now() - start < 100).equals(false);
+    expect(Date.now() - start < 50).equals(false);
+
+    moxy.on('/top-level-delay', {
+      delay: 50,
+      get: (_, res) => res.end('neat'),
+    });
+
+    start = Date.now();
+    await request.get('/top-level-delay').expect(200);
+    expect(Date.now() - start < 50).equals(false);
   });
 
   it('can proxy requests to another server', async () => {

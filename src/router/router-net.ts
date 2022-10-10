@@ -6,6 +6,7 @@ import { formatRouteResponse, Logger } from '../util';
 import {
   HandlerVariables,
   Method,
+  MethodConfig,
   MethodSettings,
   ParsedPathConfig,
   PathConfig,
@@ -144,18 +145,8 @@ export class RouterNet {
     url: string,
     routeConfig: ParsedPathConfig
   ): Promise<null | void | MoxyResponse> {
-    const method = req.method?.toLowerCase?.() as Method;
-    const methodConfig =
-      (routeConfig as PathConfigWithOptions)?.[method] || (routeConfig as PathConfigWithOptions)?.all;
-
+    const { methodConfig, proxySettings } = this.#parseRequestConfig(req, routeConfig);
     let variables = req.query;
-    let proxySettings: PathSettings = null;
-
-    if ((methodConfig as MethodSettings)?.proxy) {
-      proxySettings = methodConfig as MethodSettings;
-    } else if ((routeConfig as MethodSettings)?.proxy) {
-      proxySettings = routeConfig as MethodSettings;
-    }
 
     if (typeof methodConfig === 'undefined' && !proxySettings && typeof routeConfig !== 'function') {
       return null;
@@ -172,6 +163,10 @@ export class RouterNet {
       variables = { ...match?.groups, ...req.query };
     } else if (url !== req.url && url !== req.path) {
       return null;
+    }
+
+    if (routeConfig.delay) {
+      await new Promise((res) => setTimeout(res, routeConfig.delay));
     }
 
     if (typeof routeConfig === 'function') {
@@ -211,6 +206,33 @@ export class RouterNet {
     }
 
     return url.replace(/:([a-zA-Z][a-zA-Z0-9]+)/g, (_, varname) => `(?<${varname}>[^/#?]+)`);
+  }
+
+  /**
+   * Extract configurations from incoming request
+   *
+   * @param {MoxyRequest}       req          The request
+   * @param {ParsedPathConfig}  routeConfig  The route configuration
+   *
+   * @return { methodConfig: MethodConfig; proxySettings: PathSettings }
+   */
+  #parseRequestConfig(
+    req: MoxyRequest,
+    routeConfig: ParsedPathConfig
+  ): { methodConfig: MethodConfig; proxySettings: PathSettings } {
+    const method = req.method?.toLowerCase?.() as Method;
+    const methodConfig =
+      (routeConfig as PathConfigWithOptions)?.[method] || (routeConfig as PathConfigWithOptions)?.all;
+
+    let proxySettings: PathSettings = null;
+
+    if ((methodConfig as MethodSettings)?.proxy) {
+      proxySettings = methodConfig as MethodSettings;
+    } else if ((routeConfig as MethodSettings)?.proxy) {
+      proxySettings = routeConfig as MethodSettings;
+    }
+
+    return { methodConfig, proxySettings };
   }
 
   /**
@@ -254,8 +276,8 @@ export class RouterNet {
   /**
    * Replace params in payload with those from url placeholders
    *
-   * @param  {string}           payload    The payload
-   * @param {HandlerVariables}  variables  Replacements, including match groups and query params
+   * @param  {string}            payload    The payload
+   * @param  {HandlerVariables}  variables  Replacements, including match groups and query params
    *
    * @return {string}
    */
