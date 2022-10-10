@@ -33,7 +33,7 @@ export class RouterNet {
    */
   createProxy(
     request: http.IncomingMessage,
-    response: http.ServerResponse,
+    response: MoxyResponse,
     proxyUrl: string,
     options?: https.RequestOptions
   ): void {
@@ -51,9 +51,28 @@ export class RouterNet {
 
     const protocol = reqOptions.protocol === 'http:' ? http : https;
 
-    const proxy = protocol.request(reqOptions, (res) => {
-      response.writeHead(res.statusCode, res.headers);
-      res.pipe(response, { end: true });
+    const proxy = protocol.request(reqOptions, (proxyResponse) => {
+      response.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+      proxyResponse.pipe(response, { end: true });
+    });
+
+    proxy.on('error', (error) => {
+      if (!response.writableEnded) {
+        response.sendJson({ status: 502, message: error }, { headers: { 'X-Moxy-Error': 'proxy error' } });
+      }
+    });
+    request.on('error', (error) => {
+      if (!response.writableEnded) {
+        response.sendJson({ status: 500, message: error }, { headers: { 'X-Moxy-Error': 'request error' } });
+      }
+    });
+    proxy.on('timeout', () => {
+      response.sendJson(
+        { status: 504, message: 'Proxy timeout', options: reqOptions },
+        { headers: { 'X-Moxy-Error': 'proxy timeout' } }
+      );
+      request.destroy();
+      proxy.destroy();
     });
 
     request.pipe(proxy, { end: true });
@@ -106,7 +125,7 @@ export class RouterNet {
       }
     }
 
-    return res.sendJson({ message: 'Not found', status: 404 });
+    return res.sendJson({ message: 'Not found', status: 404 }, { headers: { 'X-Moxy-Error': 'Route not found' } });
   }
 
   /**

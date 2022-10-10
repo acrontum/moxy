@@ -361,6 +361,43 @@ describe(relative(process.cwd(), __filename), () => {
       expect(body).deep.equals({ message: 'Hello!' });
       expect(headers['x-proxy-responder']).equals('moxy');
     });
+
+    moxy.on('/bad-proxy/(?<proxyPath>.*)', {
+      get: {
+        proxy: 'http://localhost:11/:proxyPath',
+      },
+    });
+
+    await request.get('/bad-proxy/proxier').expect(({ status, body, headers }) => {
+      expect(status).equals(502);
+      expect(body).deep.equals({
+        status: 502,
+        message: { errno: -111, code: 'ECONNREFUSED', syscall: 'connect', address: '127.0.0.1', port: 11 },
+      });
+      expect(headers['x-moxy-error']).equals('proxy error');
+    });
+
+    let timer: NodeJS.Timeout;
+    proxyTarget.on('/slow', {
+      get: (_, res) => (timer = setTimeout(() => res.sendJson({ message: 'zzzzzz' }), 1000)),
+    });
+
+    moxy.on('/slow-proxy/(?<proxyPath>.*)', {
+      get: {
+        proxy: `http://localhost:${proxyTarget.port}/slow`,
+        proxyOptions: {
+          timeout: 10,
+        },
+      },
+    });
+
+    await request.get('/slow-proxy/proxier').expect(({ status, body, headers }) => {
+      expect(status).equals(504);
+      expect(body.message).equals('Proxy timeout');
+      expect(headers['x-moxy-error']).equals('proxy timeout');
+    });
+
+    clearTimeout(timer);
   });
 
   it('can use query and path params', async () => {
