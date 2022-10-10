@@ -35,7 +35,7 @@ export const extToMimeType: Record<string, string> = {
   '.sh': 'application/x-sh',
   '.tar': 'application/x-tar',
   '.xhtml': 'application/xhtml+xml',
-  '.xml': 'application/xml serves as a valid default.',
+  '.xml': 'application/xml', // serves as a valid default
   '.zip': 'application/zip',
   '.3gp': 'audio/3gpp', // if it doesn't contain video
   '.3g2': 'audio/3gpp2', // if it doesn't contain video
@@ -73,4 +73,5 @@ export const extToMimeType: Record<string, string> = {
   '.ogv': 'video/ogg',
   '.webm': 'video/webm',
   '.avi': 'video/x-msvideo',
+  '.jpg': 'image/jpeg',
 };
