@@ -63,6 +63,7 @@ export const extToMimeType: Record<string, string> = {
   '.css': 'text/css',
   '.csv': 'text/csv',
   '.htm': 'text/html',
+  '.html': 'text/html',
   '.mjs': 'text/javascript',
   '.js': 'text/javascript', // (Specifications: HTML and RFC 9239)
   '.txt': 'text/plain',
