@@ -564,9 +564,7 @@ git clone http://localhost:5000/projects/app
 
 ### More
 
-The [examples folder](./examples/) contains most of the examples above, as well as the [example config](./examples/example-routing/example.routes.ts) which has common configuration options with comments.
-
-The [example config](./examples/example-routing/example.routes.ts):
+The [examples folder](./examples/) contains most of the examples above, as well as the [example config](./examples/example-routing/example.routes.ts) which has common configuration options with comments:
 
 ```typescript
 import { HandlerVariables, MoxyRequest, MoxyResponse, Routes } from '@acrontum/moxy';
@@ -808,13 +806,7 @@ npx @acrontum/moxy --port 5000 --routes ./public
 ```
 or
 ```typescript
-import { MoxyServer } from '@acrontum/moxy';
-
-const moxy = new MoxyServer();
-
 moxy.loadConfigFromFile('./public');
-
-moxy.listen(5000);
 ```
 
 then your route config would look like:
@@ -826,7 +818,7 @@ then your route config would look like:
 }
 ```
 
-If you instead loaded the `a` folder (eg. `--routes ./public/a/`, it would look like:
+If you instead loaded the `"a"` folder (eg. `--routes ./public/a/`, it would look like:
 ```json
 {
   "/a/": "...config from a.routes.js file",
