@@ -33,12 +33,13 @@ export class MoxyServer {
    */
   router: Router;
 
-  #currentResponse: MoxyResponse;
+  #responses: Record<string, MoxyResponse>;
   #logger: Logger;
 
   constructor(config?: ServerConfig) {
     this.#logger = new Logger(process.env.MOXY_LOG || config?.logging || 'verbose');
     this.router = new Router(this.#logger, config?.router);
+    this.#responses = {};
   }
 
   /**
@@ -152,11 +153,16 @@ export class MoxyServer {
     const options: ServerOptions = { IncomingMessage: MoxyRequest, ServerResponse: MoxyResponse };
 
     this.server = createServer(options, (req: IncomingMessage, res: ServerResponse): Promise<void> => {
-      this.#currentResponse = res as MoxyResponse;
+      this.#responses[(req as MoxyRequest).id] = res as MoxyResponse;
 
       return this.router
         .requestListener(req as MoxyRequest, res as MoxyResponse)
-        .catch((error) => this.#handleUncaughtErrors(error));
+        .then((ret) => {
+          delete this.#responses[(req as MoxyRequest).id];
+
+          return ret;
+        })
+        .catch((error) => this.#handleUncaughtErrors(error, res as MoxyResponse));
     });
 
     this.#createConnectionManager();
@@ -198,20 +204,23 @@ export class MoxyServer {
    *
    * @param {Error}  error  The error
    */
-  #handleUncaughtErrors(error: HttpException): void {
+  #handleUncaughtErrors(error: HttpException, res: MoxyResponse): void {
     this.#logger.error(error);
 
-    if (this.#currentResponse && !this.#currentResponse.writableEnded) {
+    const currentResponse = this.#responses[res.id];
+
+    if (currentResponse && !currentResponse.writableEnded) {
       if (error?.status) {
-        this.#currentResponse.sendJson({ status: error.status, error: error.message });
+        currentResponse.sendJson({ status: error.status, error: error.message });
       } else {
-        this.#currentResponse.sendJson({
+        currentResponse.sendJson({
           status: 500,
           error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
         });
       }
-      this.#currentResponse = null;
     }
+
+    delete this.#responses[res.id];
   }
 
   /**
