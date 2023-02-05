@@ -1,6 +1,6 @@
 {
   "name": "@acrontum/moxy",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "Simple, configurable part mock part proxy",
   "main": "dist/src/index.js",
   "scripts": {
