@@ -1,8 +1,19 @@
-import * as fs from 'fs';
-import { basename, join, posix } from 'path';
+import * as http from 'http';
+import * as https from 'https';
+import { posix } from 'path';
+import { URL } from 'url';
 import { MoxyRequest, MoxyResponse } from '../server';
-import { formatRoutesForPrinting, HttpException, Logger } from '../util';
-import { PathConfig, RouteConfig, RouterNet, Routes } from './index';
+import { HttpException, Logger, formatRouteResponse, formatRoutesForPrinting } from '../util';
+import {
+  HandlerVariables,
+  Method,
+  MethodConfig,
+  MethodSettings,
+  PathConfig,
+  PathSettings,
+  RouteConfig,
+  Routes,
+} from './index';
 
 export interface RouterConfig {
   /**
@@ -45,12 +56,11 @@ export class Router {
    * Router config options
    */
   options: RouterConfig;
-
-  #routerNet: RouterNet;
+  #logger: Logger;
 
   constructor(logger: Logger, options?: RouterConfig) {
     this.options = options || {};
-    this.#routerNet = new RouterNet(this, logger);
+    this.#logger = logger;
   }
 
   /**
@@ -124,82 +134,6 @@ export class Router {
   }
 
   /**
-   * Recursively search the folder at <path> for files matching <anything>.routes.js(on) and import their config
-   *
-   * @param  {string}  [path]  The path
-   *
-   * @return {this}
-   */
-  async addRoutesFromFolder(path: string): Promise<this> {
-    const files = await this.getFolderContents(path);
-
-    while (files.length) {
-      const next = files.shift();
-
-      if (next.isDirectory()) {
-        files.push(...(await this.getFolderContents(next.name)));
-        continue;
-      }
-
-      if (this.#isRouterFile(next.name)) {
-        this.loadConfigFromFile(next.name, path);
-      }
-    }
-
-    this.routerPaths = Object.entries(this.routes);
-
-    return this;
-  }
-
-  /**
-   * Gets the folder contents
-   *
-   * @param  {string}                dirPath  The dir path
-   *
-   * @return {Promise<fsDirent[]>
-   */
-  async getFolderContents(dirPath: string): Promise<fs.Dirent[]> {
-    const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
-
-    return files.map((file) => {
-      file.name = join(dirPath, file.name);
-
-      return file;
-    });
-  }
-
-  /**
-   * Loads a configuration from file
-   *
-   * @param {string}  filePath  The file path
-   * @param {string}  basePath  The base path
-   */
-  loadConfigFromFile(filePath: string, basePath: string): void {
-    let pathConfig: Record<string, Routes> = require(filePath); // eslint-disable-line @typescript-eslint/no-var-requires
-    const prefix = filePath.replace(`/${basename(filePath)}`, '').replace(basePath, '');
-
-    if (filePath.endsWith('.json')) {
-      pathConfig = { export: pathConfig };
-    }
-
-    for (const cfg of Object.values(pathConfig)) {
-      this.addRoutes(prefix, cfg);
-    }
-  }
-
-  /**
-   * Server request listener
-   *
-   * @param  {MoxyRequest}   req  The request
-   * @param  {MoxyResponse}  res  The resource
-   *
-   * @return {Promise<any>}
-   */
-  async requestListener(req: MoxyRequest, res: MoxyResponse): Promise<any> {
-    return this.#routerNet.requestListener(req, res);
-  }
-
-  /**
    * Handle requests to api routes (/_moxy)
    *
    * @param  {MoxyRequest}   req  The request
@@ -246,6 +180,281 @@ export class Router {
   }
 
   /**
+   * Creates a simple opaque proxy
+   *
+   * @param {httpIncomingMessage}  request   The request
+   * @param {httpServerResponse}   response  The response
+   * @param {string}               proxyUrl  The proxy url
+   * @param {httpsRequestOptions}  options   The request options
+   */
+  createProxy(
+    request: http.IncomingMessage,
+    response: MoxyResponse,
+    proxyUrl: string,
+    options?: https.RequestOptions
+  ): void {
+    const target = new URL(proxyUrl);
+
+    const reqOptions: https.RequestOptions = {
+      protocol: target.protocol,
+      hostname: target.hostname,
+      port: target.port,
+      path: target.href.replace(`${target.protocol}//${target.hostname}:${target.port}`, ''),
+      method: request.method,
+      ...options,
+      headers: { ...request?.headers, ...options?.headers, Host: target.hostname },
+    };
+
+    const protocol = reqOptions.protocol === 'http:' ? http : https;
+
+    const proxy = protocol.request(reqOptions, (proxyResponse) => {
+      response.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+      proxyResponse.pipe(response, { end: true });
+    });
+
+    proxy.on('error', (error) => {
+      if (!response.writableEnded) {
+        response.sendJson({ status: 502, message: error }, { headers: { 'X-Moxy-Error': 'proxy error' } });
+      }
+    });
+    request.on('error', (error) => {
+      if (!response.writableEnded) {
+        response.sendJson({ status: 500, message: error }, { headers: { 'X-Moxy-Error': 'request error' } });
+      }
+    });
+    proxy.on('timeout', () => {
+      response.sendJson(
+        { status: 504, message: 'Proxy timeout', options: reqOptions },
+        { headers: { 'X-Moxy-Error': 'proxy timeout' } }
+      );
+      request.destroy();
+      proxy.destroy();
+    });
+
+    request.pipe(proxy, { end: true });
+  }
+
+  /**
+   * Server request listener
+   *
+   * @param  {MoxyRequest}   req  The request
+   * @param  {MoxyResponse}  res  The resource
+   *
+   * @return {Promise<any>}
+   */
+  async requestListener(req: MoxyRequest, res: MoxyResponse): Promise<void | MoxyResponse> {
+    res.on('finish', () => this.#logger.log(`\n${formatRouteResponse(req, res)}`));
+
+    if (/^\/_moxy/.test(req.url)) {
+      return await this.handleApi(req, res);
+    }
+
+    for (const index in this.onceRouterPaths) {
+      const [url, routeConfig] = this.onceRouterPaths[index];
+
+      const response = await this.tryHandleRequest(req, res, url, routeConfig);
+      if (response !== null) {
+        this.onceRouterPaths.splice(parseInt(index, 10), 1);
+
+        return response;
+      }
+    }
+
+    if (req.url in this.routes) {
+      const response = await this.tryHandleRequest(req, res, req.url, this.routes[req.url]);
+      if (response !== null) {
+        return response;
+      }
+    }
+
+    if (req.path in this.routes) {
+      const response = await this.tryHandleRequest(req, res, req.path, this.routes[req.path]);
+      if (response !== null) {
+        return response;
+      }
+    }
+
+    for (const [url, routeConfig] of this.routerPaths) {
+      const response = await this.tryHandleRequest(req, res, url, routeConfig);
+      if (response !== null) {
+        return response;
+      }
+    }
+
+    return res.sendJson({ message: 'Not found', status: 404 }, { headers: { 'X-Moxy-Error': 'Route not found' } });
+  }
+
+  /**
+   * Handles server request based on path config
+   *
+   * @param  {MoxyRequest}   req          The request
+   * @param  {MoxyResponse}  res          The resource
+   * @param  {string}        url          The url to test
+   * @param  {RouteConfig}   routeConfig  The parsed route config
+   *
+   * @return {Promise<null|void|MoxyResponse>}
+   */
+  async tryHandleRequest(
+    req: MoxyRequest,
+    res: MoxyResponse,
+    url: string,
+    routeConfig: ParsedPathConfig
+  ): Promise<null | void | MoxyResponse> {
+    const { methodConfig, proxySettings } = this.#parseRequestConfig(req, routeConfig);
+    let variables = req.query;
+
+    if (typeof methodConfig === 'undefined' && !proxySettings && typeof routeConfig !== 'function') {
+      return null;
+    }
+
+    if (routeConfig.urlRegex) {
+      const match: RegExpExecArray = routeConfig.urlRegex.exec(req.url);
+      routeConfig.urlRegex.lastIndex = 0;
+
+      if (!match) {
+        return null;
+      }
+
+      variables = { ...match?.groups, ...req.query };
+    } else if (url !== req.url && url !== req.path) {
+      return null;
+    }
+
+    await this.#delay(routeConfig?.delay);
+
+    if (typeof routeConfig === 'function') {
+      return routeConfig(req, res, variables);
+    }
+
+    if (typeof methodConfig === 'function') {
+      return methodConfig(req, res, variables);
+    }
+
+    if (typeof methodConfig === 'string') {
+      return res.sendFile(this.#applyReplacements(methodConfig, variables));
+    }
+
+    if (proxySettings) {
+      await this.#delay(proxySettings.delay);
+
+      return this.createProxy(
+        req,
+        res,
+        this.#applyReplacements(proxySettings.proxy, variables),
+        proxySettings.proxyOptions
+      );
+    }
+
+    await this.#delay(methodConfig?.delay);
+
+    return await this.#parseConfigRoute(res, methodConfig, variables);
+  }
+
+  /**
+   * Convert simple replacement params into regex match groups
+   *
+   * @param  {string}  url  The url
+   *
+   * @return {string}
+   */
+  parsePlaceholderParams(url: string): string {
+    if (url.charAt(0) !== '/') {
+      url = `/${url}`;
+    }
+
+    return url.replace(/:([a-zA-Z][a-zA-Z0-9]+)/g, (_, varname) => `(?<${varname}>[^/#?]+)`);
+  }
+
+  /**
+   * Extract configurations from incoming request
+   *
+   * @param {MoxyRequest}       req          The request
+   * @param {ParsedPathConfig}  routeConfig  The route configuration
+   *
+   * @return { methodConfig: MethodConfig; proxySettings: PathSettings }
+   */
+  #parseRequestConfig(
+    req: MoxyRequest,
+    routeConfig: ParsedPathConfig
+  ): { methodConfig: MethodConfig; proxySettings: PathSettings } {
+    const method = req.method?.toLowerCase?.() as Method;
+    const methodConfig =
+      (routeConfig as PathConfigWithOptions)?.[method] || (routeConfig as PathConfigWithOptions)?.all;
+
+    let proxySettings: PathSettings = null;
+
+    if ((methodConfig as MethodSettings)?.proxy) {
+      proxySettings = methodConfig as MethodSettings;
+    } else if ((routeConfig as MethodSettings)?.proxy) {
+      proxySettings = routeConfig as MethodSettings;
+    }
+
+    return { methodConfig, proxySettings };
+  }
+
+  /**
+   * Parse and response to configured route
+   *
+   * @param {MoxyResponse}      res           The response
+   * @param {MethodSettings}    methodConfig  Route configuration
+   * @param {HandlerVariables}  variables     Replacements, including match groups and query params
+   *
+   * @return {Promise<null | void | MoxyResponse>}
+   */
+  async #parseConfigRoute(
+    res: MoxyResponse,
+    methodConfig: MethodSettings,
+    variables: HandlerVariables
+  ): Promise<null | void | MoxyResponse> {
+    const status = methodConfig.status ?? 200;
+    const headers: http.OutgoingHttpHeaders = methodConfig?.headers;
+
+    let body = methodConfig.body;
+    if (typeof body === 'object' && body !== null) {
+      try {
+        body = JSON.stringify(body);
+        res.setHeader('Content-Type', 'application/json');
+      } catch (e) {}
+    }
+    body = this.#applyReplacements(body, variables);
+
+    return res.writeHead(status, headers).end(body);
+  }
+
+  async #delay(delay: number): Promise<void> {
+    if (!delay) {
+      return;
+    }
+    const ms = parseInt(`${delay}`, 10);
+    if (Number.isNaN(ms) || ms <= 0) {
+      return;
+    }
+    await new Promise((res) => setTimeout(res, ms));
+  }
+
+  /**
+   * Replace params in payload with those from url placeholders
+   *
+   * @param  {string}            payload    The payload
+   * @param  {HandlerVariables}  variables  Replacements, including match groups and query params
+   *
+   * @return {string}
+   */
+  #applyReplacements(payload: string, variables: HandlerVariables): string {
+    if (!payload || typeof payload !== 'string') {
+      return payload;
+    }
+
+    const serialize = (value: string | string[]): string => (Array.isArray(value) ? JSON.stringify(value) : value);
+
+    Object.entries(variables || {}).forEach(([varname, replacement]) => {
+      payload = payload.replace(new RegExp(`:${varname}`, 'g'), serialize(replacement));
+    });
+
+    return payload;
+  }
+
+  /**
    * Adds regex test to route config when options.exact is not true
    *
    * @param  {string}            fullPath  The full path
@@ -265,22 +474,11 @@ export class Router {
     }
 
     if (!options?.exact && !(config as PathConfig)?.exact) {
-      const pathWithGroups = this.#routerNet.parsePlaceholderParams(fullPath);
+      const pathWithGroups = this.parsePlaceholderParams(fullPath);
       parsed.urlRegex = new RegExp(`^${pathWithGroups}(\\?.*)?$`, 'g');
     }
 
     return parsed;
-  }
-
-  /**
-   * Determines whether the specified path is router file
-   *
-   * @param  {string}   path  The path
-   *
-   * @return {boolean}
-   */
-  #isRouterFile(path: string): boolean {
-    return /\.routes\.js(on)?$/.test(path);
   }
 
   /**

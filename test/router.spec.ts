@@ -179,7 +179,7 @@ describe(relative(process.cwd(), __filename), () => {
   });
 
   it('can read filesystem for routing', async () => {
-    await moxy.router.addRoutesFromFolder(join(__dirname, 'fixtures', 'load-from-dir'));
+    await moxy.addRoutesFromFolder(join(__dirname, 'fixtures', 'load-from-dir'));
 
     const serializedDeleteFuntion =
       "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
@@ -309,7 +309,7 @@ describe(relative(process.cwd(), __filename), () => {
 
     start = Date.now();
     await request.post('/test').expect(201);
-    expect(Date.now() - start < 50).equals(false);
+    expect(Date.now() - start >= 50).equals(true);
 
     moxy.on('/top-level-delay', {
       delay: 50,
@@ -318,7 +318,20 @@ describe(relative(process.cwd(), __filename), () => {
 
     start = Date.now();
     await request.get('/top-level-delay').expect(200);
-    expect(Date.now() - start < 50).equals(false);
+    expect(Date.now() - start >= 50).equals(true);
+
+    moxy.on('/route-and-method-level-delay', {
+      delay: 50,
+      get: { status: 200 },
+      post: {
+        status: 201,
+        delay: 50,
+      },
+    });
+
+    start = Date.now();
+    await request.post('/route-and-method-level-delay').expect(201);
+    expect(Date.now() - start >= 100).equals(true);
   });
 
   it('can proxy requests to another server', async () => {

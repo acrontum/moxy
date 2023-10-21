@@ -118,7 +118,7 @@ export const main = async (argv?: string[]): Promise<MoxyServer> => {
   const moxyServer = new MoxyServer(cliConfig.options);
 
   for (const dir of cliConfig.routerFolders) {
-    await moxyServer.router.addRoutesFromFolder(dir);
+    await moxyServer.addRoutesFromFolder(dir);
   }
 
   for (const conf of cliConfig.configs) {
