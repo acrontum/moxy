@@ -92,4 +92,3 @@ export type RouteConfig = string | RequestHandler | PathConfig;
 export type Routes = Record<string, RouteConfig>;
 
 export * from './router';
-export * from './router-net';

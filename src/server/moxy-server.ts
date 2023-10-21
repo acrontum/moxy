@@ -1,5 +1,7 @@
+import * as fs from 'fs';
 import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'http';
 import { AddressInfo, Socket } from 'net';
+import { basename, join } from 'path';
 import { AddRouteOptions, RouteConfig, Router, RouterConfig, Routes } from '../router';
 import { getId, HttpException, Logger, LogLevels } from '../util';
 import { MoxyRequest } from './request';
@@ -137,6 +139,70 @@ export class MoxyServer {
   }
 
   /**
+   * Recursively search the folder at <path> for files matching <anything>.routes.js(on) and import their config
+   *
+   * @param  {string}  [path]  The path
+   *
+   * @return {this}
+   */
+  async addRoutesFromFolder(path: string): Promise<this> {
+    const files = await this.getFolderContents(path);
+
+    while (files.length) {
+      const next = files.shift();
+
+      if (next.isDirectory()) {
+        files.push(...(await this.getFolderContents(next.name)));
+        continue;
+      }
+
+      if (this.#isRouterFile(next.name)) {
+        this.loadConfigFromFile(next.name, path);
+      }
+    }
+
+    this.router.routerPaths = Object.entries(this.router.routes);
+
+    return this;
+  }
+
+  /**
+   * Gets the folder contents
+   *
+   * @param  {string}                dirPath  The dir path
+   *
+   * @return {Promise<fsDirent[]>
+   */
+  async getFolderContents(dirPath: string): Promise<fs.Dirent[]> {
+    const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
+
+    return files.map((file) => {
+      file.name = join(dirPath, file.name);
+
+      return file;
+    });
+  }
+
+  /**
+   * Loads a configuration from file
+   *
+   * @param {string}  filePath  The file path
+   * @param {string}  basePath  The base path
+   */
+  loadConfigFromFile(filePath: string, basePath: string): void {
+    let pathConfig: Record<string, Routes> = require(filePath); // eslint-disable-line @typescript-eslint/no-var-requires
+    const prefix = filePath.replace(`/${basename(filePath)}`, '').replace(basePath, '');
+
+    if (filePath.endsWith('.json')) {
+      pathConfig = { export: pathConfig };
+    }
+
+    for (const cfg of Object.values(pathConfig)) {
+      this.router.addRoutes(prefix, cfg);
+    }
+  }
+
+  /**
    * Start the HTTP server
    *
    * @param  {number}  [port=0]  The port. If none spcified, will use a random port
@@ -152,18 +218,21 @@ export class MoxyServer {
 
     const options: ServerOptions = { IncomingMessage: MoxyRequest, ServerResponse: MoxyResponse };
 
-    this.server = createServer(options, (req: IncomingMessage, res: ServerResponse): Promise<void> => {
-      this.#responses[(req as MoxyRequest).id] = res as MoxyResponse;
+    this.server = createServer(
+      options,
+      async (req: IncomingMessage, res: ServerResponse): Promise<void | MoxyResponse> => {
+        this.#responses[(req as MoxyRequest).id] = res as MoxyResponse;
 
-      return this.router
-        .requestListener(req as MoxyRequest, res as MoxyResponse)
-        .then((ret) => {
+        try {
+          const response = await this.router.requestListener(req as MoxyRequest, res as MoxyResponse);
           delete this.#responses[(req as MoxyRequest).id];
 
-          return ret;
-        })
-        .catch((error) => this.#handleUncaughtErrors(error, res as MoxyResponse));
-    });
+          return response;
+        } catch (error) {
+          this.#handleUncaughtErrors(error as HttpException, res as MoxyResponse);
+        }
+      }
+    );
 
     this.#createConnectionManager();
 
@@ -197,6 +266,17 @@ export class MoxyServer {
 
       this.server.close((error) => (error ? reject(error) : resolve((this.server = null))));
     });
+  }
+
+  /**
+   * Determines whether the specified path is router file
+   *
+   * @param  {string}   path  The path
+   *
+   * @return {boolean}
+   */
+  #isRouterFile(path: string): boolean {
+    return /\.routes\.js(on)?$/.test(path);
   }
 
   /**
