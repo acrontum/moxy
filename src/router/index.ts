@@ -1,6 +1,6 @@
 import { OutgoingHttpHeaders } from 'http';
 import { RequestOptions } from 'https';
-import { MoxyRequest, MoxyResponse } from '..';
+import { MoxyRequest, MoxyResponse, MoxyServer } from '..';
 
 /**
  * Path and query params
@@ -15,7 +15,12 @@ export type Method = 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch'
 /**
  * Manual request handler
  */
-export type RequestHandler = (req: MoxyRequest, res: MoxyResponse, variables: HandlerVariables) => void;
+export type RequestHandler = (
+  req: MoxyRequest,
+  res: MoxyResponse,
+  variables: HandlerVariables,
+  server: MoxyServer
+) => void;
 
 export interface PathSettings {
   /**

@@ -678,4 +678,33 @@ describe(relative(process.cwd(), __filename), () => {
     await request.post('/route/ignored/path').expect(200);
     await request.delete('/route/ignored/path').expect(200);
   });
+
+  it('can modify server params from handler method', async () => {
+    moxy.on('/modify-me', {
+      get: (req, res, vars, server) => {
+        server.once('/modify-me', {
+          get: {
+            status: 418,
+            headers: { 'Content-Type': 'application/json' },
+            body: { message: 'ok' },
+          },
+        });
+
+        return res.sendJson({ message: 'configured' });
+      },
+    });
+
+    await request.get('/modify-me').expect(({ status, body }) => {
+      expect(status).equals(200);
+      expect(body.message).equals('configured');
+    });
+    await request.get('/modify-me').expect(({ status, body }) => {
+      expect(status).equals(418);
+      expect(body.message).equals('ok');
+    });
+    await request.get('/modify-me').expect(({ status, body }) => {
+      expect(status).equals(200);
+      expect(body.message).equals('configured');
+    });
+  });
 });

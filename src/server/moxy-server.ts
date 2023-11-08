@@ -40,7 +40,7 @@ export class MoxyServer {
 
   constructor(config?: ServerConfig) {
     this.#logger = new Logger(process.env.MOXY_LOG || config?.logging || 'verbose');
-    this.router = new Router(this.#logger, config?.router);
+    this.router = new Router(this.#logger, this, config?.router);
     this.#responses = {};
   }
 
