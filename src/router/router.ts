@@ -2,7 +2,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { posix } from 'path';
 import { URL } from 'url';
-import { MoxyRequest, MoxyResponse } from '../server';
+import { MoxyRequest, MoxyResponse, MoxyServer } from '../server';
 import { HttpException, Logger, formatRouteResponse, formatRoutesForPrinting } from '../util';
 import {
   HandlerVariables,
@@ -57,10 +57,12 @@ export class Router {
    */
   options: RouterConfig;
   #logger: Logger;
+  #server: MoxyServer;
 
-  constructor(logger: Logger, options?: RouterConfig) {
+  constructor(logger: Logger, server: MoxyServer, options?: RouterConfig) {
     this.options = options || {};
     this.#logger = logger;
+    this.#server = server;
   }
 
   /**
@@ -323,11 +325,11 @@ export class Router {
     await this.#delay(routeConfig?.delay);
 
     if (typeof routeConfig === 'function') {
-      return routeConfig(req, res, variables);
+      return routeConfig(req, res, variables, this.#server);
     }
 
     if (typeof methodConfig === 'function') {
-      return methodConfig(req, res, variables);
+      return methodConfig(req, res, variables, this.#server);
     }
 
     if (typeof methodConfig === 'string') {
