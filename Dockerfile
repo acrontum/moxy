@@ -1,4 +1,4 @@
-FROM node:16 AS build
+FROM node:20 AS build
 
 WORKDIR /opt
 
@@ -12,7 +12,7 @@ COPY ./src ./src
 RUN npm run build --ignore-scripts -- -p ./tsconfig.defs.json
 
 
-FROM node:16-alpine AS runtime
+FROM node:20-alpine AS runtime
 
 WORKDIR /opt
 
