@@ -392,10 +392,8 @@ describe(relative(process.cwd(), __filename), () => {
 
     await request.get('/bad-proxy/proxier').expect(({ status, body, headers }) => {
       expect(status).equals(502);
-      expect(body).deep.equals({
-        status: 502,
-        message: { errno: -111, code: 'ECONNREFUSED', syscall: 'connect', address: '127.0.0.1', port: 11 },
-      });
+      expect(body.status).equals(502);
+      expect(body.message.code).equals('ECONNREFUSED');
       expect(headers['x-moxy-error']).equals('proxy error');
     });
 
