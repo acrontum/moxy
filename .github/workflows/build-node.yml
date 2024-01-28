@@ -1,0 +1,52 @@
+name: Node build
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - docs/**
+      - examples/**
+      - .github/**
+      - '!.github/workflows/build-node.yml'
+
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - docs/**
+      - examples/**
+      - .github/**
+      - '!.github/workflows/build-node.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        node-version: ['12.x', '14.x', '16.x', '18.x', '20.x']
+
+    runs-on:
+      - ubuntu-latest
+
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test
+      - run: npm run lint
