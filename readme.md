@@ -17,8 +17,16 @@ Simple, configurable mock / proxy server with 0 dependencies.
   </a>
 
   <img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/@acrontum/moxy">
-</p>
 
+  <br />
+
+  <a href="https://github.com/acrontum/moxy/actions" alt="CI status (node)">
+    <img alt="GitHub tag (latest SemVer)" src="https://github.com/acrontum/moxy/actions/workflows/build-node.yml/badge.svg">
+  </a>
+  <a href="https://github.com/acrontum/moxy/actions" alt="CI status (docker)">
+    <img alt="GitHub tag (latest SemVer)" src="https://github.com/acrontum/moxy/actions/workflows/build-docker.yml/badge.svg">
+  </a>
+</p>
 
 ---
 

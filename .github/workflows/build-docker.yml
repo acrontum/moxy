@@ -1,0 +1,41 @@
+name: Docker build
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - docs/**
+      - examples/**
+      - .github/**
+      - '!.github/workflows/build-docker.yml'
+
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - docs/**
+      - examples/**
+      - .github/**
+      - '!.github/workflows/build-docker.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on:
+      - ubuntu-latest
+
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker build
+        run: |
+          DOCKER_BUILDKIT=0 docker build --tag ci .
