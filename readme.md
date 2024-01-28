@@ -4,27 +4,27 @@
 Simple, configurable mock / proxy server with 0 dependencies.
 
 <p align="center">
-  <a href="https://www.npmjs.org/package/@acrontum/moxy" alt="npm @acrontum/moxy">
-    <img alt="npm (scoped)" src="https://img.shields.io/npm/v/@acrontum/moxy">
+  <a href="https://www.npmjs.org/package/@acrontum/moxy" alt="npm version @acrontum/moxy">
+    <img alt="npm version @acrontum/moxy" src="https://img.shields.io/npm/v/@acrontum/moxy">
   </a>
 
-  <a href="https://hub.docker.com/r/acrontum/moxy/tags" alt="Dockerhub acrontum/moxy">
-    <img alt="Docker Image Version (latest semver)" src="https://img.shields.io/docker/v/acrontum/moxy?label=dockerhub">
+  <a href="https://hub.docker.com/r/acrontum/moxy/tags" alt="Dockerhub image version acrontum/moxy">
+    <img alt="Dockerhub image version acrontum/moxy" src="https://img.shields.io/docker/v/acrontum/moxy?label=dockerhub">
   </a>
 
-  <a href="https://github.com/acrontum/moxy" alt="Github acrontum/moxy">
-    <img alt="GitHub tag (latest SemVer)" src="https://img.shields.io/github/v/tag/acrontum/moxy">
+  <a href="https://github.com/acrontum/moxy" alt="Github latest tag acrontum/moxy">
+    <img alt="Github latest tag acrontum/moxy" src="https://img.shields.io/github/v/tag/acrontum/moxy">
   </a>
 
-  <img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/@acrontum/moxy">
+  <img alt="npm minified bundle size" src="https://img.shields.io/bundlephobia/min/@acrontum/moxy">
 
   <br />
 
-  <a href="https://github.com/acrontum/moxy/actions" alt="CI status (node)">
-    <img alt="GitHub tag (latest SemVer)" src="https://github.com/acrontum/moxy/actions/workflows/build-node.yml/badge.svg">
+  <a href="https://github.com/acrontum/moxy/actions/workflows/build-node.yml" alt="CI status (node workflow)">
+    <img alt="CI status (node workflow)" src="https://github.com/acrontum/moxy/actions/workflows/build-node.yml/badge.svg">
   </a>
-  <a href="https://github.com/acrontum/moxy/actions" alt="CI status (docker)">
-    <img alt="GitHub tag (latest SemVer)" src="https://github.com/acrontum/moxy/actions/workflows/build-docker.yml/badge.svg">
+  <a href="https://github.com/acrontum/moxy/actions/workflows/build-docker.yml" alt="CI status (docker workflow)">
+    <img alt="CI status (docker workflow)" src="https://github.com/acrontum/moxy/actions/workflows/build-docker.yml/badge.svg">
   </a>
 </p>
 
@@ -400,6 +400,10 @@ import { join, dirname, resolve } from 'path';
 const moxy = new MoxyServer();
 
 // simple file server (GET only, no nested paths)
+
+// NOTE moxy will not accept paths outside of the target assets folder by default
+// such as /home/file.png or ../../file.png. To disable this behaviour, use a
+// request handler
 moxy.on('/v1/assets/:filename', './assets/:filename');
 
 // file server with upload
