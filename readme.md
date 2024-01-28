@@ -400,6 +400,10 @@ import { join, dirname, resolve } from 'path';
 const moxy = new MoxyServer();
 
 // simple file server (GET only, no nested paths)
+
+// NOTE moxy will not accept paths outside of the target assets folder by default
+// such as /home/file.png or ../../file.png. To disable this behaviour, use a
+// request handler
 moxy.on('/v1/assets/:filename', './assets/:filename');
 
 // file server with upload
