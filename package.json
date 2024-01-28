@@ -11,7 +11,7 @@
     "docs": "npm run docs-api && npm run docs-readme && npm run docs-changelog",
     "docs-api": "typedoc --readme none --excludeExternals --excludePrivate --out docs --gitRevision main src/index.ts",
     "docs-readme": "npx doctoc --github readme.md && sed -i 's/%5C_/_/g' readme.md",
-    "docs-changelog": "npx auto-changelog --output changelog.md --commit-limit false --sort-commits date --ignore-commit-pattern 'acrontum/release'",
+    "docs-changelog": "npx auto-changelog --output changelog.md --commit-limit false --sort-commits date --hide-empty-releases --ignore-commit-pattern 'acrontum/release' --breaking-pattern 'breaking change: '",
     "lint": "eslint '{src,test}/**/*.{js,ts,json}'",
     "test": "NODE_ENV=test mocha --require source-map-support/register --recursive 'dist/test/**/*.spec.js'",
     "prepublishOnly": "./githooks/pre-push"
