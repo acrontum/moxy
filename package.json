@@ -52,7 +52,7 @@
     "mocha": "^9.2.2",
     "prettier": "^2.6.2",
     "source-map-support": "^0.5.21",
-    "supertest": "^6.2.2",
+    "supertest": "^6.3.4",
     "typedoc": "^0.22.15",
     "typescript": "^4.6.3"
   },
