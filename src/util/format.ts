@@ -56,7 +56,9 @@ export const formatBody = (body: string | Buffer | Record<string, any>): string 
     return body.length > 1000 ? `<Buffer ${body.length} bytes>` : body.toString();
   }
 
-  return JSON.stringify(body, null, 2);
+  const json = JSON.stringify(body, null, 2);
+
+  return json?.length > 1500 ? `${json.slice(0, 1000)} ...` : json;
 };
 
 export const formatRouteResponse = (req: MoxyRequest, res: MoxyResponse): string => {
