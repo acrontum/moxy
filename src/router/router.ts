@@ -201,7 +201,7 @@ export class Router {
       protocol: target.protocol,
       hostname: target.hostname,
       port: target.port,
-      path: target.href.replace(`${target.protocol}//${target.hostname}:${target.port}`, ''),
+      path: target.pathname,
       method: request.method,
       ...options,
       headers: { ...request?.headers, ...options?.headers, Host: target.hostname },
