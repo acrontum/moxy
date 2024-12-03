@@ -25,11 +25,13 @@ export interface CloseServerOptions {
   closeConnections?: boolean;
 }
 
+export type MoxyHttpServer = Server<typeof MoxyRequest, typeof MoxyResponse>;
+
 export class MoxyServer {
   /**
    * Instance of HTTP server
    */
-  server?: Server;
+  server?: MoxyHttpServer;
   /**
    * The internal router
    */
@@ -205,18 +207,21 @@ export class MoxyServer {
   /**
    * Start the HTTP server
    *
-   * @param  {number}  [port=0]  The port. If none spcified, will use a random port
+   * @param  {number}  [port=0]  The port. If none or zero spcified, will use a random port
    *
-   * @return {Promise<Server>}
+   * @return {Promise<MoxyHttpServer>}
    */
-  async listen(port = 0): Promise<Server> {
+  async listen(port = 0): Promise<MoxyHttpServer> {
     if (this.server) {
       this.#logger.warn('WARN: Server already running');
 
       return this.server;
     }
 
-    const options: ServerOptions = { IncomingMessage: MoxyRequest, ServerResponse: MoxyResponse };
+    const options: ServerOptions<typeof MoxyRequest, typeof MoxyResponse> = {
+      IncomingMessage: MoxyRequest,
+      ServerResponse: MoxyResponse,
+    };
 
     this.server = createServer(
       options,
@@ -236,7 +241,7 @@ export class MoxyServer {
 
     this.#createConnectionManager();
 
-    return new Promise<Server>((resolve, reject) => {
+    return new Promise<MoxyHttpServer>((resolve, reject) => {
       this.server.on('error', reject);
 
       this.server.listen(port, () => {
