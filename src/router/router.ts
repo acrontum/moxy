@@ -201,7 +201,7 @@ export class Router {
       protocol: target.protocol,
       hostname: target.hostname,
       port: target.port,
-      path: `${target.pathname}${target.search}`,
+      path: `${target.pathname}${target.search}${target.hash}`,
       method: request.method,
       ...options,
       headers: { ...request?.headers, ...options?.headers, Host: target.hostname },

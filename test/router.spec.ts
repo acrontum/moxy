@@ -169,7 +169,7 @@ describe(relative(process.cwd(), __filename), () => {
     await request.get('/example-routing/static/fixtures/static/index.html').expect(200);
     await request.post('/example-routing/auth/login').expect(200);
     await request.patch('/example-routing/users/me').expect(200);
-    await request.get('/example-routing/proxied-server/test?q=asdf').expect(418);
+    await request.get('/example-routing/proxied-server/test?q=asdf#test').expect(418);
     await request.get('/example-routing/manual-override').expect(418);
     await request.get('/example-routing/partly-manual-override/user_id').expect(418);
     await request.delete('/example-routing/glacial/').expect(204);
