@@ -9,7 +9,7 @@ export interface SendOptions {
   status?: number;
 }
 
-export class MoxyResponse extends ServerResponse {
+export class MoxyResponse extends ServerResponse<MoxyRequest> {
   /**
    * Unique request UUID
    */
@@ -162,7 +162,7 @@ export class MoxyResponse extends ServerResponse {
    *
    * @param {any[]}  args  The arguments
    */
-  end(...args: any[]): MoxyResponse {
+  end(...args: any[]): this {
     super.end(...args);
 
     if (args[0]) {
