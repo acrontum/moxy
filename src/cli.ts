@@ -49,12 +49,12 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
       return 0;
     case '-h':
     case '--help':
-      process.stdout.write(usage);
+      console.log(usage.replace(/\n$/, ''));
       process.exit(0);
 
     case '-v':
     case '--version':
-      process.stdout.write(`${version}\n`);
+      console.log(version);
       process.exit(0);
 
     case '-r':
@@ -132,7 +132,7 @@ export const main = async (argv?: string[]): Promise<MoxyServer> => {
 
 if (require.main === module) {
   main(process.argv.slice(2)).catch((error: Error) => {
-    process.stderr.write((error as Error).message);
+    console.error(error);
     process.exit(1);
   });
 }
