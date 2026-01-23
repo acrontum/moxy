@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "rootDir": ".",
     "sourceMap": true,
-    "strictNullChecks": false
+    "strictNullChecks": true
   },
   "include": [
     "src",

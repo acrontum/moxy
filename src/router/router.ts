@@ -1,19 +1,108 @@
 import * as http from 'http';
 import * as https from 'https';
-import { posix } from 'path';
-import { URL } from 'url';
-import { MoxyRequest, MoxyResponse, MoxyServer } from '../server';
-import { HttpException, Logger, formatRouteResponse, formatRoutesForPrinting } from '../util';
-import {
-  HandlerVariables,
-  Method,
-  MethodConfig,
-  MethodSettings,
-  PathConfig,
-  PathSettings,
-  RouteConfig,
-  Routes,
-} from './index';
+import { ClientRequest, OutgoingHttpHeaders } from 'node:http';
+import { posix } from 'node:path';
+import { URL } from 'node:url';
+import { MoxyServer } from '../server/moxy-server';
+import { MoxyRequest } from '../server/request';
+import { MoxyResponse } from '../server/response';
+import { formatRouteResponse, formatRoutesForPrinting } from '../util/format';
+import { HttpException } from '../util/http-exception';
+import { Logger } from '../util/logger';
+
+/**
+ * Path and query params
+ */
+export type HandlerVariables = Record<string, string | string[]>;
+
+/**
+ * Common http verbs
+ */
+export type Method = 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
+
+/**
+ * Manual request handler
+ */
+export type RequestHandler = (
+  req: MoxyRequest,
+  res: MoxyResponse,
+  variables: HandlerVariables,
+  server: MoxyServer,
+) => unknown;
+
+export interface PathSettings {
+  /**
+   * If set, will proxy all requests to the target
+   */
+  proxy?: string;
+  /**
+   * Options to pass through proxy
+   */
+  proxyOptions?: https.RequestOptions;
+  /**
+   * Method-level delay (in milliseconds)
+   */
+  delay?: number;
+  /**
+   * If true, will not parse route as regex
+   */
+  exact?: true;
+}
+
+export interface MethodSettings extends PathSettings {
+  /**
+   * status code to return (defaults to 200)
+   */
+  status?: number;
+  /**
+   * response payload
+   */
+  body?: unknown;
+  /**
+   * headers to add (Content-Type is added automatically)
+   */
+  headers?: http.OutgoingHttpHeaders;
+  /**
+   * HTTP request handler function
+   */
+  handler?: RequestHandler;
+}
+
+/**
+ * Configuration for a method.
+ * Would be configured as { get: MethodConfig, post: MethodConfig, ... }
+ *
+ * examples
+ *
+ * Standard http response:
+ *   {
+ *     status: 200,
+ *     body: { message: 'hello' },
+ *   }
+ *
+ * Manual request listener method:
+ *   async (req, res, vars) => res.sendJson({ url: req.url, date: Date.now() }, { status: 201 });
+ *
+ * Static file:
+ *   '/static/:file'
+ *
+ */
+export type MethodConfig = MethodSettings | string | RequestHandler;
+
+/**
+ * Configuration for a path.
+ */
+export type PathConfig = PathSettings & { all?: MethodConfig } & { [key in Method]?: MethodConfig };
+
+/**
+ * Configuration for a route.
+ */
+export type RouteConfig = string | RequestHandler | PathConfig;
+
+/**
+ * Configuration for multiple routes.
+ */
+export type Routes = Record<string, RouteConfig>;
 
 export interface RouterConfig {
   /**
@@ -74,7 +163,7 @@ export class Router {
    *
    * @return {this}
    */
-  addRoute(path: string, config: RouteConfig, options?: AddRouteOptions): this {
+  addRoute(path: string | null, config: RouteConfig | null, options?: AddRouteOptions): this {
     if (!path) {
       throw new HttpException('router.on must contain "path"', 422);
     }
@@ -97,7 +186,10 @@ export class Router {
       this.routes[path] = { ...(compiledRoute as PathConfig) };
       delete compiledRoute.urlRegex;
     } else {
-      this.routes[path] = { ...((this.routes[path] as PathConfig) || {}), ...(compiledRoute as PathConfig) };
+      this.routes[path] = {
+        ...((this.routes[path] as PathConfig | undefined) || {}),
+        ...(compiledRoute as PathConfig),
+      };
       delete compiledRoute.urlRegex;
     }
 
@@ -129,6 +221,7 @@ export class Router {
    * @return {this}
    */
   removeRoute(path: string): this {
+    /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
     delete this.routes[path];
     this.routerPaths = Object.entries(this.routes);
 
@@ -144,6 +237,10 @@ export class Router {
    * @return {Promise<MoxyResponse>}
    */
   async handleApi(req: MoxyRequest, res: MoxyResponse): Promise<MoxyResponse> {
+    if (!req.path) {
+      return res.sendJson({ message: 'Not found', status: 404, headers: { 'X-Moxy-Error': 'Req path is undefined' } });
+    }
+
     const body = await req.getBody('json');
     const { path, config } = body;
     const configPath = req.path.replace(/^\/_moxy\/routes/, '');
@@ -161,12 +258,16 @@ export class Router {
     }
 
     if (!this.options.allowHttpRouteConfig) {
-      return res.sendJson({ message: 'Not found', status: 404 });
+      return res.sendJson({
+        message: 'Not found',
+        status: 404,
+        headers: { 'X-Moxy-Error': 'Server not configurable over HTTP' },
+      });
     }
 
     switch (apiRoute) {
       case 'POST /_moxy/routes':
-        return this.#createApiRoute(req, res, path, config);
+        return this.#createApiRoute(req, res, path as string | null, config as RouteConfig | null);
 
       case `PATCH /_moxy/routes${configPath}`:
         return this.#updateApiRoute(res, configPath, body);
@@ -193,8 +294,8 @@ export class Router {
     request: http.IncomingMessage,
     response: MoxyResponse,
     proxyUrl: string,
-    options?: https.RequestOptions
-  ): void {
+    options?: https.RequestOptions,
+  ): ClientRequest {
     const target = new URL(proxyUrl);
 
     const reqOptions: https.RequestOptions = {
@@ -204,13 +305,13 @@ export class Router {
       path: `${target.pathname}${target.search}${target.hash}`,
       method: request.method,
       ...options,
-      headers: { ...request?.headers, ...options?.headers, Host: target.hostname },
+      headers: { ...request.headers, ...(options?.headers as OutgoingHttpHeaders), Host: target.hostname },
     };
 
     const protocol = reqOptions.protocol === 'http:' ? http : https;
 
     const proxy = protocol.request(reqOptions, (proxyResponse) => {
-      response.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+      response.writeHead(proxyResponse.statusCode || 500, proxyResponse.headers);
       proxyResponse.pipe(response, { end: true });
     });
 
@@ -227,13 +328,15 @@ export class Router {
     proxy.on('timeout', () => {
       response.sendJson(
         { status: 504, message: 'Proxy timeout', options: reqOptions },
-        { headers: { 'X-Moxy-Error': 'proxy timeout' } }
+        { headers: { 'X-Moxy-Error': 'proxy timeout' } },
       );
       request.destroy();
       proxy.destroy();
     });
 
     request.pipe(proxy, { end: true });
+
+    return proxy;
   }
 
   /**
@@ -242,21 +345,36 @@ export class Router {
    * @param  {MoxyRequest}   req  The request
    * @param  {MoxyResponse}  res  The resource
    *
-   * @return {Promise<any>}
+   * @return {Promise<void | MoxyResponse>}
    */
-  async requestListener(req: MoxyRequest, res: MoxyResponse): Promise<void | MoxyResponse> {
-    res.on('finish', () => this.#logger.log(`\n${formatRouteResponse(req, res)}`));
+  async requestListener(req: MoxyRequest, res: MoxyResponse): Promise<unknown> {
+    if (!req.url) {
+      return res.sendJson(
+        { message: 'Req parsing error', status: 500 },
+        { headers: { 'X-Moxy-Error': 'Req URL is undefined' } },
+      );
+    }
+    if (!req.path) {
+      return res.sendJson(
+        { message: 'Req parsing error', status: 500 },
+        { headers: { 'X-Moxy-Error': 'Req path is undefined' } },
+      );
+    }
+
+    res.on('finish', () => {
+      this.#logger.log(`\n${formatRouteResponse(req, res)}`);
+    });
 
     if (/^\/_moxy/.test(req.url)) {
       return await this.handleApi(req, res);
     }
 
-    for (const index in this.onceRouterPaths) {
+    for (let index = 0; index < this.onceRouterPaths.length; ++index) {
       const [url, routeConfig] = this.onceRouterPaths[index];
 
       const response = await this.tryHandleRequest(req, res, url, routeConfig);
       if (response !== null) {
-        this.onceRouterPaths.splice(parseInt(index, 10), 1);
+        this.onceRouterPaths.splice(index, 1);
 
         return response;
       }
@@ -300,56 +418,58 @@ export class Router {
     req: MoxyRequest,
     res: MoxyResponse,
     url: string,
-    routeConfig: ParsedPathConfig
-  ): Promise<null | void | MoxyResponse> {
+    routeConfig: ParsedPathConfig,
+  ): Promise<null | MoxyResponse> {
     const { methodConfig, proxySettings } = this.#parseRequestConfig(req, routeConfig);
-    let variables = req.query;
+    let variables: HandlerVariables = req.query;
 
-    if (typeof methodConfig === 'undefined' && !proxySettings && typeof routeConfig !== 'function') {
+    if (!methodConfig && !proxySettings && typeof routeConfig !== 'function') {
+      return null;
+    }
+
+    if (!req.url) {
       return null;
     }
 
     if (routeConfig.urlRegex) {
-      const match: RegExpExecArray = routeConfig.urlRegex.exec(req.url);
+      const match = routeConfig.urlRegex.exec(req.url);
       routeConfig.urlRegex.lastIndex = 0;
 
       if (!match) {
         return null;
       }
 
-      variables = { ...match?.groups, ...req.query };
+      variables = { ...match.groups, ...req.query };
     } else if (url !== req.url && url !== req.path) {
       return null;
     }
 
-    await this.#delay(routeConfig?.delay);
+    await this.#delay(routeConfig.delay);
 
     if (typeof routeConfig === 'function') {
-      return routeConfig(req, res, variables, this.#server);
+      routeConfig(req, res, variables, this.#server);
+      return res;
     }
 
     if (typeof methodConfig === 'function') {
-      return methodConfig(req, res, variables, this.#server);
+      methodConfig(req, res, variables, this.#server);
+      return res;
     }
 
     if (typeof methodConfig === 'string') {
       return res.sendFile(this.#applyReplacements(methodConfig, variables));
     }
 
-    if (proxySettings) {
+    if (proxySettings?.proxy) {
       await this.#delay(proxySettings.delay);
 
-      return this.createProxy(
-        req,
-        res,
-        this.#applyReplacements(proxySettings.proxy, variables),
-        proxySettings.proxyOptions
-      );
+      this.createProxy(req, res, this.#applyReplacements(proxySettings.proxy, variables), proxySettings.proxyOptions);
+      return res;
     }
 
     await this.#delay(methodConfig?.delay);
 
-    return await this.#parseConfigRoute(res, methodConfig, variables);
+    return this.#parseConfigRoute(res, methodConfig, variables);
   }
 
   /**
@@ -370,25 +490,25 @@ export class Router {
   /**
    * Extract configurations from incoming request
    *
-   * @param {MoxyRequest}       req          The request
-   * @param {ParsedPathConfig}  routeConfig  The route configuration
+   * @param {MoxyRequest}              req          The request
+   * @param {ParsedPathConfig | null}  routeConfig  The route configuration
    *
    * @return { methodConfig: MethodConfig; proxySettings: PathSettings }
    */
   #parseRequestConfig(
     req: MoxyRequest,
-    routeConfig: ParsedPathConfig
-  ): { methodConfig: MethodConfig; proxySettings: PathSettings } {
-    const method = req.method?.toLowerCase?.() as Method;
+    routeConfig: ParsedPathConfig | null,
+  ): { methodConfig: MethodConfig | null; proxySettings: PathSettings | null } {
+    const method = req.method?.toLowerCase() as Method;
     const methodConfig =
-      (routeConfig as PathConfigWithOptions)?.[method] || (routeConfig as PathConfigWithOptions)?.all;
+      (routeConfig as PathConfigWithOptions)[method] || (routeConfig as PathConfigWithOptions).all || null;
 
-    let proxySettings: PathSettings = null;
+    let proxySettings: PathSettings | null = null;
 
-    if ((methodConfig as MethodSettings)?.proxy) {
+    if ((methodConfig as MethodSettings | null)?.proxy) {
       proxySettings = methodConfig as MethodSettings;
-    } else if ((routeConfig as MethodSettings)?.proxy) {
-      proxySettings = routeConfig as MethodSettings;
+    } else if (routeConfig?.proxy) {
+      proxySettings = routeConfig;
     }
 
     return { methodConfig, proxySettings };
@@ -403,27 +523,29 @@ export class Router {
    *
    * @return {Promise<null | void | MoxyResponse>}
    */
-  async #parseConfigRoute(
+  #parseConfigRoute(
     res: MoxyResponse,
-    methodConfig: MethodSettings,
-    variables: HandlerVariables
-  ): Promise<null | void | MoxyResponse> {
-    const status = methodConfig.status ?? 200;
-    const headers: http.OutgoingHttpHeaders = methodConfig?.headers;
+    methodConfig: MethodSettings | null,
+    variables: HandlerVariables,
+  ): null | MoxyResponse {
+    const status = methodConfig?.status ?? 200;
+    const headers = methodConfig?.headers;
 
-    let body = methodConfig.body;
+    let body = methodConfig?.body;
     if (typeof body === 'object' && body !== null) {
       try {
         body = JSON.stringify(body);
         res.setHeader('Content-Type', 'application/json');
-      } catch (e) {}
+      } catch (e) {
+        this.#logger.debug('failed to parse body', { body, e });
+      }
     }
     body = this.#applyReplacements(body, variables);
 
     return res.writeHead(status, headers).end(body);
   }
 
-  async #delay(delay: number): Promise<void> {
+  async #delay(delay?: number): Promise<void> {
     if (!delay) {
       return;
     }
@@ -442,7 +564,7 @@ export class Router {
    *
    * @return {string}
    */
-  #applyReplacements(payload: string, variables: HandlerVariables): string {
+  #applyReplacements<T = unknown>(payload: T, variables: HandlerVariables | null): T {
     if (!payload || typeof payload !== 'string') {
       return payload;
     }
@@ -450,7 +572,7 @@ export class Router {
     const serialize = (value: string | string[]): string => (Array.isArray(value) ? JSON.stringify(value) : value);
 
     Object.entries(variables || {}).forEach(([varname, replacement]) => {
-      payload = payload.replace(new RegExp(`:${varname}`, 'g'), serialize(replacement));
+      payload = (payload as string).replace(new RegExp(`:${varname}`, 'g'), serialize(replacement)) as T;
     });
 
     return payload;
@@ -475,7 +597,7 @@ export class Router {
       parsed = { get: config };
     }
 
-    if (!options?.exact && !(config as PathConfig)?.exact) {
+    if (!options?.exact && !(config as PathConfig).exact) {
       const pathWithGroups = this.parsePlaceholderParams(fullPath);
       parsed.urlRegex = new RegExp(`^${pathWithGroups}(\\?.*)?$`, 'g');
     }
@@ -518,7 +640,7 @@ export class Router {
    */
   #sendApiRoutes(req: MoxyRequest, res: MoxyResponse): MoxyResponse {
     return res.sendJson(
-      Object.keys(req.query.once === 'true' ? Object.fromEntries(this.onceRouterPaths) : this.routes)
+      Object.keys(req.query.once === 'true' ? Object.fromEntries(this.onceRouterPaths) : this.routes),
     );
   }
 
@@ -546,10 +668,10 @@ export class Router {
    *
    * @return {MoxyResponse}
    */
-  #createApiRoute(req: MoxyRequest, res: MoxyResponse, path: string, config: RouteConfig): MoxyResponse {
+  #createApiRoute(req: MoxyRequest, res: MoxyResponse, path: string | null, config: RouteConfig | null): MoxyResponse {
     this.addRoute(path, config, { once: req.query.once === 'true' });
 
-    let payload = { [path]: this.routes[path] };
+    let payload = { [path as string]: this.routes[path as string] };
     if (req.query.once === 'true') {
       payload = Object.fromEntries([this.onceRouterPaths[this.onceRouterPaths.length - 1]]);
     }
@@ -566,7 +688,7 @@ export class Router {
    *
    * @return {MoxyResponse}
    */
-  #updateApiRoute(res: MoxyResponse, path: string, body: Record<string, any>): MoxyResponse {
+  #updateApiRoute(res: MoxyResponse, path: string, body: Record<string, unknown>): MoxyResponse {
     if (!path || !this.routes[path]) {
       return res.sendJson({ message: 'Not found', status: 404 });
     }
@@ -580,17 +702,18 @@ export class Router {
    *
    * @param  {MoxyResponse}         res   The respoonse
    * @param  {string}               path  The path
-   * @param  {Record<string, any>}  body  The body
+   * @param  {Record<string, unknown>}  body  The body
    *
    * @return {MoxyResponse}
    */
-  #createOrReplaceApiRoute(res: MoxyResponse, path: string, body: Record<string, any>): MoxyResponse {
+  #createOrReplaceApiRoute(res: MoxyResponse, path: string, body: Record<string, unknown>): MoxyResponse {
     if (!path) {
       return res.sendJson({ message: 'Not found', status: 404 });
     }
 
     const status = this.routes[path] ? 200 : 201;
 
+    /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
     delete this.routes[path];
     this.addRoute(path, body);
 
@@ -606,6 +729,7 @@ export class Router {
    * @return {MoxyResponse}
    */
   #deleteApiRoute(res: MoxyResponse, path: string): MoxyResponse {
+    /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
     delete this.routes[path];
     this.routerPaths = Object.entries(this.routes);
 
@@ -615,14 +739,14 @@ export class Router {
   /**
    * Hides parsed regex from response
    *
-   * @param  {Routes}  json  The json
+   * @param  {Routes}  routes  The router config object
    *
    * @return {string}
    */
   #removeRouteRegex(routes: Routes): string {
     return JSON.stringify(routes, (key, value) => {
       if (key !== 'urlRegex') {
-        return value;
+        return value as unknown;
       }
     });
   }

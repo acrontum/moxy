@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { after, afterEach, before } from 'mocha';
-import { relative } from 'path';
-import { default as supertest } from 'supertest';
+import assert from 'node:assert';
+import { relative } from 'node:path';
+import { after, afterEach, before, describe, it } from 'node:test';
 import { MoxyServer, RouteConfig } from '../src';
+import { getRequest, TestRequest } from './shared/test-util';
 
 const basicRouteConfig: RouteConfig = { post: { status: 418, body: { message: '0xC0FFEE' } } };
 const updatedRouteConfig: RouteConfig = { delete: { status: 418, body: { message: '0xC0FFEE' } } };
@@ -19,26 +19,25 @@ const privateRouteResponse = {
   'GET /router?once=false&serializeMethods=true': 'show router',
 };
 
-describe(relative(process.cwd(), __filename), () => {
+describe(relative(process.cwd(), __filename), async () => {
   const moxy: MoxyServer = new MoxyServer({ router: { allowHttpRouteConfig: true }, logging: 'error' });
-  let request: supertest.SuperTest<supertest.Test>;
+  let request: TestRequest;
 
   const clearRoutes = async (): Promise<void> => {
     moxy.resetRoutes();
     moxy.on('/brew', basicRouteConfig);
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
   };
 
   before(async () => {
     await moxy.listen();
-    request = supertest(moxy.server);
+    request = getRequest(moxy);
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     moxy.resetRoutes();
   });
 
@@ -46,46 +45,40 @@ describe(relative(process.cwd(), __filename), () => {
     await moxy.close({ closeConnections: true });
   });
 
-  it('GET /_moxy - reports api routes', async () => {
+  await it('GET /_moxy - reports api routes', async () => {
     await request.get('/_moxy').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(publicRouteResponse);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: publicRouteResponse });
     });
 
     moxy.on('/a/b/c', { get: { status: 200 } });
 
     await request.get('/_moxy').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(publicRouteResponse);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: publicRouteResponse });
     });
   });
 
-  it('GET /_moxy/routes - can list available routes', async () => {
+  await it('GET /_moxy/routes - can list available routes', async () => {
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([]);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
     });
 
     await request
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals([]);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
       });
 
     moxy.on('/a/b/c', { get: { status: 200 } });
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/a/b/c']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/a/b/c'] });
     });
 
     moxy.on('test-two', { get: { status: 200 } });
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/a/b/c', 'test-two']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/a/b/c', 'test-two'] });
     });
 
     moxy.once('/x/y/z', { get: { status: 200 } });
@@ -94,8 +87,7 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals(['/x/y/z']);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: ['/x/y/z'] });
       });
 
     moxy.once('test-three', { get: { status: 200 } });
@@ -104,32 +96,34 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals(['/x/y/z', 'test-three']);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: ['/x/y/z', 'test-three'] });
       });
   });
 
-  it('GET /_moxy/router - can return router config', async () => {
+  await it('GET /_moxy/router - can return router config', async () => {
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({});
+      assert.deepStrictEqual({ status, body }, { status: 200, body: {} });
     });
 
     moxy.on('/a/b/c', { get: { status: 200 } });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/a/b/c': { get: { status: 200 } } });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/a/b/c': { get: { status: 200 } } } });
     });
 
     moxy.on('test-two', { get: { status: 200 } });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({
-        '/a/b/c': { get: { status: 200 } },
-        'test-two': { get: { status: 200 } },
-      });
+      assert.deepStrictEqual(
+        { status, body },
+        {
+          status: 200,
+          body: {
+            '/a/b/c': { get: { status: 200 } },
+            'test-two': { get: { status: 200 } },
+          },
+        },
+      );
     });
 
     moxy.on('test', {
@@ -139,64 +133,71 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({
-        '/a/b/c': {
-          get: {
-            status: 200,
+      assert.deepStrictEqual(
+        { status, body },
+        {
+          status: 200,
+          body: {
+            '/a/b/c': {
+              get: {
+                status: 200,
+              },
+            },
+            'test-two': {
+              get: {
+                status: 200,
+              },
+            },
+            'test': {
+              get: "get(req, res) {\n                return res.writeHead(200, 'ok');\n            }",
+            },
           },
         },
-        'test-two': {
-          get: {
-            status: 200,
-          },
-        },
-        'test': {
-          get: "get(req, res) {\n                return res.writeHead(200, 'ok');\n            }",
-        },
-      });
+      );
     });
 
     await request
       .get('/_moxy/router')
       .query({ serializeMethods: false })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals({
-          '/a/b/c': {
-            get: {
-              status: 200,
+        assert.deepStrictEqual(
+          { status, body },
+          {
+            status: 200,
+            body: {
+              '/a/b/c': {
+                get: {
+                  status: 200,
+                },
+              },
+              'test-two': {
+                get: {
+                  status: 200,
+                },
+              },
+              'test': {
+                get: '[Function: handler]',
+              },
             },
           },
-          'test-two': {
-            get: {
-              status: 200,
-            },
-          },
-          'test': {
-            get: '[Function: handler]',
-          },
-        });
+        );
       });
   });
 
-  it('POST /_moxy/routes - can create routes', async () => {
+  await it('POST /_moxy/routes - can create routes', async () => {
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([]);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
     });
 
     // programatic
     moxy.on('/brew', basicRouteConfig);
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': basicRouteConfig });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': basicRouteConfig } });
     });
 
     moxy.once('/brew', updatedRouteConfig);
@@ -205,23 +206,20 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals(['/brew']);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
       });
 
     await request
       .get('/_moxy/router')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals({ '/brew': updatedRouteConfig });
+        assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': updatedRouteConfig } });
       });
 
     moxy.resetRoutes();
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([]);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
     });
 
     // http
@@ -232,18 +230,15 @@ describe(relative(process.cwd(), __filename), () => {
         config: basicRouteConfig,
       })
       .expect(({ status, body }) => {
-        expect(status).equals(201);
-        expect(body).deep.equals({ '/brew': basicRouteConfig });
+        assert.deepStrictEqual({ status, body }, { status: 201, body: { '/brew': basicRouteConfig } });
       });
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': basicRouteConfig });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': basicRouteConfig } });
     });
 
     await request
@@ -254,52 +249,45 @@ describe(relative(process.cwd(), __filename), () => {
         config: { get: basicRouteConfig.post },
       })
       .expect(({ status, body }) => {
-        expect(status).equals(201);
-        expect(body).deep.equals({ '/brew': { get: basicRouteConfig.post } });
+        assert.deepStrictEqual({ status, body }, { status: 201, body: { '/brew': { get: basicRouteConfig.post } } });
       });
 
     await request
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals(['/brew']);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
       });
 
     await request
       .get('/_moxy/router')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals({ '/brew': { get: basicRouteConfig.post } });
+        assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': { get: basicRouteConfig.post } } });
       });
 
     moxy.resetRoutes();
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([]);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
     });
 
     await request
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals([]);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
       });
 
     // programatic
     moxy.on('/brew/:file', '/data/:file');
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew/:file']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew/:file'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew/:file': { get: '/data/:file' } });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew/:file': { get: '/data/:file' } } });
     });
 
     moxy.once('/brew/:file', '/www-data/:file');
@@ -308,22 +296,20 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/_moxy/routes')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals(['/brew/:file']);
+        assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew/:file'] });
       });
 
     await request
       .get('/_moxy/router')
       .query({ once: true })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals({ '/brew/:file': { get: '/www-data/:file' } });
+        assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew/:file': { get: '/www-data/:file' } } });
       });
 
     // http
   });
 
-  it('PUT /_moxy/routes/:route - can create or replace a route', async () => {
+  await it('PUT /_moxy/routes/:route - can create or replace a route', async () => {
     // programatic
     await clearRoutes();
 
@@ -331,13 +317,11 @@ describe(relative(process.cwd(), __filename), () => {
     moxy.on('/brew', updatedRouteConfig);
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': updatedRouteConfig });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': updatedRouteConfig } });
     });
 
     // http
@@ -347,46 +331,39 @@ describe(relative(process.cwd(), __filename), () => {
       .put('/_moxy/routes/brew')
       .send(updatedRouteConfig)
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals({ '/brew': updatedRouteConfig });
+        assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': updatedRouteConfig } });
       });
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': updatedRouteConfig });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/brew': updatedRouteConfig } });
     });
   });
 
-  it('PATCH /_moxy/routes/:route - can update a route', async () => {
+  await it('PATCH /_moxy/routes/:route - can update a route', async () => {
     // programatic
     await clearRoutes();
 
     moxy.on('/brew', updatedRouteConfig);
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': { ...basicRouteConfig, ...updatedRouteConfig } });
+      assert.deepStrictEqual(
+        { status, body },
+        { status: 200, body: { '/brew': { ...basicRouteConfig, ...updatedRouteConfig } } },
+      );
     });
 
     // http
     moxy.resetRoutes();
 
-    await request
-      .patch('/_moxy/routes/brew')
-      .send(basicRouteConfig)
-      .expect(({ status }) => {
-        expect(status).equals(404);
-      });
+    await request.patch('/_moxy/routes/brew').send(basicRouteConfig).expect(404);
 
     await clearRoutes();
 
@@ -394,74 +371,73 @@ describe(relative(process.cwd(), __filename), () => {
       .patch('/_moxy/routes/brew')
       .send(updatedRouteConfig)
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals({ '/brew': { ...basicRouteConfig, ...updatedRouteConfig } });
+        assert.deepStrictEqual(
+          { status, body },
+          { status: 200, body: { '/brew': { ...basicRouteConfig, ...updatedRouteConfig } } },
+        );
       });
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/brew']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/brew'] });
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/brew': { ...basicRouteConfig, ...updatedRouteConfig } });
+      assert.deepStrictEqual(
+        { status, body },
+        { status: 200, body: { '/brew': { ...basicRouteConfig, ...updatedRouteConfig } } },
+      );
     });
   });
 
-  it('DELETE /_moxy/routes/:route - can remove routes', async () => {
+  await it('DELETE /_moxy/routes/:route - can remove routes', async () => {
     // programatic
     await clearRoutes();
 
     moxy.off('/brew');
 
-    expect(moxy.router.routes).deep.equals({});
+    assert.deepStrictEqual(moxy.router.routes, {});
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([]);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
     });
 
     // http
     await clearRoutes();
 
     await request.delete('/_moxy/routes/brew').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ message: 'Ok' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { message: 'Ok' } });
     });
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([]);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
     });
   });
 
-  it('disables http modification by default', async () => {
+  await it('disables http modification by default', async () => {
     const nonExposedServer = new MoxyServer({ logging: 'error', router: { allowHttpRouteConfig: false } });
     await nonExposedServer.listen(0);
-    after(async () => await nonExposedServer.close({ closeConnections: true }));
+    after(async () => {
+      await nonExposedServer.close({ closeConnections: true });
+    });
 
-    request = supertest(nonExposedServer.server);
+    request = getRequest(nonExposedServer);
 
     // programatic ok
     nonExposedServer.on('/private-router', { get: { status: 200 } });
 
     // root available
     await request.get('/_moxy').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(privateRouteResponse);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: privateRouteResponse });
     });
 
     // routes available
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals(['/private-router']);
+      assert.deepStrictEqual({ status, body }, { status: 200, body: ['/private-router'] });
     });
 
     // routes available
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ '/private-router': { get: { status: 200 } } });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { '/private-router': { get: { status: 200 } } } });
     });
 
     // all others are blocked
@@ -470,4 +446,4 @@ describe(relative(process.cwd(), __filename), () => {
     await request.patch('/_moxy/routes/private-router').expect(404);
     await request.delete('/_moxy/routes/private-router').expect(404);
   });
-});
+}).catch(console.error);

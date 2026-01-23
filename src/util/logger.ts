@@ -1,56 +1,56 @@
-export type LogLevels = 'error' | 'off' | string;
+export type LogLevel = 'off' | 'trace' | 'error' | 'warn' | 'info' | 'log' | 'verbose' | 'debug';
 
 export class Logger {
-  level: LogLevels = 'verbose';
+  level: LogLevel = 'verbose';
 
-  constructor(level?: LogLevels) {
-    this.level = level;
+  constructor(level?: LogLevel) {
+    this.level = level || 'verbose';
   }
 
   /**
    * Same as console.log. Will not log if level is 'error' or 'off'
    */
-  log(...args: any[]): void {
-    return this.logIfEnabled('log', ...args);
+  log(...args: unknown[]): void {
+    this.logIfEnabled('log', ...args);
   }
 
   /**
    * Same as console.info. Will not log if level is 'error' or 'off'
    */
-  info(...args: any[]): void {
-    return this.logIfEnabled('info', ...args);
+  info(...args: unknown[]): void {
+    this.logIfEnabled('info', ...args);
   }
 
   /**
    * Same as console.debug. Will not log if level is 'error' or 'off'
    */
-  debug(...args: any[]): void {
-    return this.logIfEnabled('debug', ...args);
+  debug(...args: unknown[]): void {
+    this.logIfEnabled('debug', ...args);
   }
 
   /**
    * Same as console.warn. Will not log if level is 'error' or 'off'
    */
-  warn(...args: any[]): void {
-    return this.logIfEnabled('warn', ...args);
+  warn(...args: unknown[]): void {
+    this.logIfEnabled('warn', ...args);
   }
 
   /**
    * Same as console.error. Will always log
    */
-  error(...args: any[]): void {
-    return console.error(...args);
+  error(...args: unknown[]): void {
+    console.error(...args);
   }
 
   /**
    * Same as console.trace. Will always log
    */
-  trace(...args: any[]): void {
-    return console.trace(...args);
+  trace(...args: unknown[]): void {
+    console.trace(...args);
   }
 
-  logIfEnabled(method: keyof typeof console, ...args: any[]): void {
-    if ((this.level as LogLevels) === 'off') {
+  logIfEnabled(method: keyof typeof console, ...args: unknown[]): void {
+    if (this.level === 'off') {
       return;
     }
 
@@ -58,6 +58,6 @@ export class Logger {
       return;
     }
 
-    return console[method as 'log'](...args);
+    console[method as 'log'](...args);
   }
 }

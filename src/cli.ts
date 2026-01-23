@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { realpathSync } from 'fs';
-import { PathConfig } from './router';
-import { MoxyServer, ServerConfig } from './server';
+import { realpathSync } from 'node:fs';
 import { version } from '../package.json';
+import { PathConfig } from './router/router';
+import { MoxyServer, ServerConfig } from './server/moxy-server';
 
 export interface CliConfig {
   options: ServerConfig;
@@ -36,7 +36,6 @@ export const assertNextArg = (name: string, argv: string[]): string => {
   return next;
 };
 
-/* eslint-disable-next-line max-lines-per-function */
 export const getOption = (config: CliConfig, argv?: string[]): number => {
   if (!argv?.length) {
     return 0;
@@ -62,7 +61,7 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
       config.routerFolders.push(
         ...assertNextArg(arg, argv)
           .split(',')
-          .map((f) => realpathSync(f))
+          .map((f) => realpathSync(f)),
       );
       break;
 
@@ -74,7 +73,7 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
         const newlineRemoved = next.replace(/([^\\])\\n/g, '$1');
         config.configs.push(JSON.parse(newlineRemoved) as { path: string; config: PathConfig });
       } catch (e) {
-        throw new Error(`Error parsing --on argument: '${next}'\n${(e as Error)?.message}`);
+        throw new Error(`Error parsing --on argument: '${next}'\n${(e as Error | undefined)?.message}`);
       }
       break;
 
@@ -90,11 +89,12 @@ export const getOption = (config: CliConfig, argv?: string[]): number => {
 
     case '-a':
     case '--allow-http-config':
+      config.options.router ||= {};
       config.options.router.allowHttpRouteConfig = true;
       break;
 
     default:
-      throw new Error(`Unknown option -- ${arg}\n${usage}`);
+      throw new Error(`Unknown option -- ${arg || 'empty'}\n${usage}`);
   }
 
   return argv.length;
@@ -131,7 +131,7 @@ export const main = async (argv?: string[]): Promise<MoxyServer> => {
 };
 
 if (require.main === module) {
-  main(process.argv.slice(2)).catch((error: Error) => {
+  main(process.argv.slice(2)).catch((error: unknown) => {
     console.error(error);
     process.exit(1);
   });

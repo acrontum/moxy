@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import { OutgoingHttpHeaders, ServerResponse } from 'http';
-import * as path from 'path';
-import { extToMimeType } from '../util';
+import * as fs from 'node:fs';
+import { OutgoingHttpHeaders, ServerResponse } from 'node:http';
+import * as path from 'node:path';
+import { extToMimeType } from '../util/common-extensions';
 import { MoxyRequest } from './request';
 
 export interface SendOptions {
@@ -17,9 +17,9 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
   /**
    * Request duration in ms
    */
-  duration: number;
+  duration?: number;
 
-  #chunks: any[] = [];
+  #chunks: Uint8Array[] = [];
 
   constructor(req: MoxyRequest) {
     super(req);
@@ -34,23 +34,27 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
   /**
    * The response body
    *
-   * @type {(Buffer|Record<string, any>|string)}
+   * @type {(Buffer|Record<string, unknown>|string)}
    */
-  get body(): string | Buffer | Record<string, any> {
+  get body(): string | Buffer | Record<string, unknown> {
     return this.parseBody(Buffer.concat(this.#chunks));
   }
 
   /**
    * Sends a json response
    *
-   * @param  {string|Record<string, any>}  json     The json
+   * @param  {string|Record<string, unknown>}  json     The json
    * @param  {SendOptions}                 options  Reponse options
    *
    * @return {MoxyResponse}
    */
-  sendJson(json: string | Record<string, any>, options?: SendOptions): MoxyResponse {
+  sendJson(json: string | Record<string, unknown> | unknown[], options?: SendOptions): this {
     if (typeof json !== 'string') {
-      options = { ...options, status: options?.status ?? json?.status };
+      let status: number | null = options?.status ?? null;
+      if (!Array.isArray(json) && typeof json.status === 'number') {
+        status ??= json.status;
+      }
+      options = { ...options, status: status ?? 200 };
       json = JSON.stringify(json);
     }
 
@@ -68,7 +72,7 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
    *
    * @return {MoxyResponse}
    */
-  sendFile(filename: string, options?: SendOptions): MoxyResponse {
+  sendFile(filename: string, options?: SendOptions): this {
     let filePath = path.join(process.cwd(), filename.replace(/\.\.\/?/g, ''));
 
     if (!fs.existsSync(filePath)) {
@@ -113,10 +117,17 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
    *
    * @param {Record<string, string | readonly string[] | number>}  headers  The headers
    */
-  setHeaders(headers: Record<string, string | number | readonly string[]>): void {
-    for (const [name, value] of Object.entries(headers)) {
+  setHeaders(
+    headers:
+      | Headers
+      | Map<string, number | string | readonly string[]>
+      | Record<string, string | readonly string[] | number>,
+  ): this {
+    for (const [name, value] of Object.entries(headers) as [string, number | string | readonly string[]][]) {
       this.setHeader(name, value);
     }
+
+    return this;
   }
 
   /**
@@ -124,9 +135,9 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
    *
    * @param  {Buffer}  body  The body
    *
-   * @return {(Buffer|Record<string, any>|string)}
+   * @return {(Buffer|Record<string, unknown>|string)}
    */
-  parseBody(body: Buffer): string | Buffer | Record<string, any> {
+  parseBody(body: Buffer): string | Buffer | Record<string, unknown> {
     const content = this.getHeader('Content-Type') as string;
 
     if (!content) {
@@ -138,20 +149,22 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
     }
 
     if (/application\/json/.test(content)) {
-      return JSON.parse(body.toString('utf8'));
+      return JSON.parse(body.toString('utf8')) as Record<string, unknown>;
     }
+
+    return body;
   }
 
   /**
    * Override writablewrite to store body internally
    *
    * @param  {string}   chunk  The chunk
-   * @param  {any[]}    args   The arguments
+   * @param  {unknown[]}    args   The arguments
    *
    * @return {boolean}
    */
-  write(chunk: string, ...args: any[]): boolean {
-    const written = super.write(chunk, ...args);
+  write(chunk: string, ...args: unknown[]): boolean {
+    const written = super.write(chunk, ...(args as []));
     this.#chunks.push(Buffer.from(chunk));
 
     return written;
@@ -160,13 +173,13 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
   /**
    * Overwrite writableend to store body internally
    *
-   * @param {any[]}  args  The arguments
+   * @param {unknown[]}  args  The arguments
    */
-  end(...args: any[]): this {
-    super.end(...args);
+  end(...args: unknown[]): this {
+    super.end(...(args as []));
 
     if (args[0]) {
-      this.#chunks.push(Buffer.from(args[0]));
+      this.#chunks.push(Buffer.from(args[0] as string));
     }
 
     return this;
