@@ -43,7 +43,7 @@ then manually remove %5C from the routes
 
 - [Quick Start](#quick-start)
   - [Installation](#installation)
-  - [Programatic](#programatic)
+  - [Programmatic](#programmatic)
   - [CLI](#cli)
   - [Docker](#docker)
   - [Docker compose](#docker-compose)
@@ -83,7 +83,7 @@ npm i -D @acrontum/moxy
 ```
 
 
-### Programatic
+### Programmatic
 
 
 ```typescript
@@ -885,7 +885,7 @@ const server = new MoxyServer({ router: { allowHttpRouteConfig: true } });
 npx @acrontum/moxy --allow-http-config
 ```
 
-The HTTP API offers most of the functionality that programatic or file configs offer, although it is not possible to create and handler as a function at this time.
+The HTTP API offers most of the functionality that programmatic or file configs offer, although it is not possible to create and handler as a function at this time.
 
 
 #### GET /\_moxy:
