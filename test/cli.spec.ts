@@ -1,27 +1,24 @@
-import { expect, use } from 'chai';
-import { default as chaiPromise } from 'chai-as-promised';
-import { afterEach } from 'mocha';
-import { join, relative } from 'path';
-import { default as supertest } from 'supertest';
+import assert from 'node:assert';
+import { join, relative } from 'node:path';
+import { afterEach, describe, it } from 'node:test';
 import { formatRoutesForPrinting, main, MoxyServer, RouteConfig } from '../src';
+import { getRequest, TestRequest } from './shared/test-util';
 
-use(chaiPromise);
-
-describe(relative(process.cwd(), __filename), () => {
+describe(relative(process.cwd(), __filename), async () => {
   let moxy: MoxyServer;
-  let request: supertest.SuperTest<supertest.Test>;
+  let request: TestRequest;
 
-  const start = async (argv: string[], assertions: (moxy: MoxyServer) => any): Promise<void> => {
+  const start = async (argv: string[], assertions: (moxy: MoxyServer) => unknown): Promise<void> => {
     moxy = await main(argv);
     await assertions(moxy);
     await moxy.close({ closeConnections: true });
   };
 
   afterEach(async () => {
-    await moxy?.close?.({ closeConnections: true });
+    await moxy.close({ closeConnections: true });
   });
 
-  it('can start a server', async () => {
+  await it('can start a server', async () => {
     const oldLog = process.env.MOXY_LOG;
     process.env.MOXY_LOG = 'error';
 
@@ -32,10 +29,11 @@ describe(relative(process.cwd(), __filename), () => {
       delete process.env.MOXY_LOG;
     }
 
-    request = supertest(moxy.server);
+    request = getRequest(moxy);
+
     await request.get('/_moxy').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({
+      assert.strictEqual(status, 200);
+      assert.deepStrictEqual(body, {
         'GET /routes?once=false': 'show router routes',
         'GET /router?once=false&serializeMethods=true': 'show router',
       });
@@ -44,34 +42,34 @@ describe(relative(process.cwd(), __filename), () => {
     await moxy.close({ closeConnections: true });
 
     await start(['-q'], (server) => {
-      expect(server.logLevel).equals('error');
+      assert.strictEqual(server.logLevel, 'error');
     });
 
     await start(['--quiet'], (server) => {
-      expect(server.logLevel).equals('error');
+      assert.strictEqual(server.logLevel, 'error');
     });
 
     await start(['--quiet', '-q'], (server) => {
-      expect(server.logLevel).equals('error');
+      assert.strictEqual(server.logLevel, 'error');
     });
 
     await start(['-q', '-p', '8521', '--port', '8521', '-a', '--allow-http-config'], (server) => {
-      expect(server.port).equals(8521);
-      expect(server.router.options.allowHttpRouteConfig).equals(true);
+      assert.strictEqual(server.port, 8521);
+      assert.strictEqual(server.router.options.allowHttpRouteConfig, true);
     });
 
-    await expect(main(['-p', 'a1'])).is.rejectedWith('Error: invalid port a1');
+    await assert.rejects(main(['-p', 'a1']), /Error: invalid port a1/);
   });
 
-  it('can load routes on config', async () => {
+  await it('can load routes on config', async () => {
     const routes = join(__dirname, 'fixtures', 'load-from-dir');
     const serializedDeleteFuntion =
       "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
 
     await start(['-q', '-r', routes], (server) => {
-      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes));
+      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes)) as unknown;
 
-      expect(routerConfig).deep.equals({
+      assert.deepStrictEqual(routerConfig, {
         '/a/test': { get: { status: 200 } },
         '/a/users/something': { delete: serializedDeleteFuntion },
         '/a/y/test': { get: { status: 200 } },
@@ -110,9 +108,9 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await start(['-q', '--routes', routes], (server) => {
-      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes));
+      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes)) as unknown;
 
-      expect(routerConfig).deep.equals({
+      assert.deepStrictEqual(routerConfig, {
         '/a/test': { get: { status: 200 } },
         '/a/users/something': { delete: serializedDeleteFuntion },
         '/a/y/test': { get: { status: 200 } },
@@ -151,9 +149,9 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await start(['-q', '--routes', routes, '--routes', routes], (server) => {
-      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes));
+      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes)) as unknown;
 
-      expect(routerConfig).deep.equals({
+      assert.deepStrictEqual(routerConfig, {
         '/a/test': { get: { status: 200 } },
         '/a/users/something': { delete: serializedDeleteFuntion },
         '/a/y/test': { get: { status: 200 } },
@@ -199,7 +197,7 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await start(['-q', '-o', onFirstTest], (server) => {
-      expect(server.router.routes).deep.equals({
+      assert.deepStrictEqual(server.router.routes, {
         '/test/this/path': { get: { status: 503 }, urlRegex: /^\/test\/this\/path(\?.*)?$/g },
       });
     });
@@ -219,7 +217,7 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await start(['-q', '-o', onFirstTest, '--on', onSecondTest, '-o', onSecondTestPartTwo], (server) => {
-      expect(server.router.routes).deep.equals({
+      assert.deepStrictEqual(server.router.routes, {
         '/test/this/path': { get: { status: 503 }, urlRegex: /^\/test\/this\/path(\?.*)?$/g },
         '/some/other/path': {
           get: { status: 503 },
@@ -229,4 +227,4 @@ describe(relative(process.cwd(), __filename), () => {
       });
     });
   });
-});
+}).catch(console.error);

@@ -1,9 +1,11 @@
-import * as fs from 'fs';
-import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'http';
-import { AddressInfo, Socket } from 'net';
-import { basename, join } from 'path';
-import { AddRouteOptions, RouteConfig, Router, RouterConfig, Routes } from '../router';
-import { getId, HttpException, Logger, LogLevels } from '../util';
+import * as fs from 'node:fs';
+import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'node:http';
+import { AddressInfo, Socket } from 'node:net';
+import { basename, join } from 'node:path';
+import { AddRouteOptions, RouteConfig, Router, RouterConfig, Routes } from '../router/router';
+import { getId } from '../util/format';
+import { HttpException } from '../util/http-exception';
+import { Logger, LogLevel } from '../util/logger';
 import { MoxyRequest } from './request';
 import { MoxyResponse } from './response';
 
@@ -11,7 +13,7 @@ export interface ServerConfig {
   /**
    * Set log level
    */
-  logging?: LogLevels;
+  logging?: LogLevel;
   /**
    * Configuration passed to router
    */
@@ -31,17 +33,17 @@ export class MoxyServer {
   /**
    * Instance of HTTP server
    */
-  server?: MoxyHttpServer;
+  server: MoxyHttpServer | null = null;
   /**
    * The internal router
    */
   router: Router;
 
-  #responses: Record<string, MoxyResponse>;
+  #responses: { [key in string]?: MoxyResponse };
   #logger: Logger;
 
   constructor(config?: ServerConfig) {
-    this.#logger = new Logger(process.env.MOXY_LOG || config?.logging || 'verbose');
+    this.#logger = new Logger((process.env.MOXY_LOG as LogLevel | undefined) || config?.logging || 'verbose');
     this.router = new Router(this.#logger, this, config?.router);
     this.#responses = {};
   }
@@ -52,20 +54,20 @@ export class MoxyServer {
    * @type {number}
    */
   get port(): number {
-    return (this?.server?.address?.() as AddressInfo)?.port;
+    return (this.server?.address() as AddressInfo).port;
   }
 
   /**
    * Get current log level
    */
-  get logLevel(): string {
+  get logLevel(): LogLevel {
     return this.#logger.level;
   }
 
   /**
    * Set current log level
    */
-  set logLevel(value: string) {
+  set logLevel(value: LogLevel) {
     this.#logger.level = value;
   }
 
@@ -151,7 +153,7 @@ export class MoxyServer {
     const files = await this.getFolderContents(path);
 
     while (files.length) {
-      const next = files.shift();
+      const next = files.shift() as fs.Dirent;
 
       if (next.isDirectory()) {
         files.push(...(await this.getFolderContents(next.name)));
@@ -192,7 +194,8 @@ export class MoxyServer {
    * @param {string}  basePath  The base path
    */
   loadConfigFromFile(filePath: string, basePath: string): void {
-    let pathConfig: Record<string, Routes> = require(filePath); // eslint-disable-line @typescript-eslint/no-var-requires
+    /* eslint-disable-next-line @typescript-eslint/no-require-imports */
+    let pathConfig = require(filePath) as Record<string, Routes>;
     const prefix = filePath.replace(`/${basename(filePath)}`, '').replace(basePath, '');
 
     if (filePath.endsWith('.json')) {
@@ -223,31 +226,34 @@ export class MoxyServer {
       ServerResponse: MoxyResponse,
     };
 
-    this.server = createServer(
+    const server = createServer(
       options,
-      async (req: IncomingMessage, res: ServerResponse): Promise<void | MoxyResponse> => {
+      /* eslint-disable-next-line @typescript-eslint/no-misused-promises */
+      async (req: IncomingMessage, res: ServerResponse): Promise<unknown> => {
         this.#responses[(req as MoxyRequest).id] = res as MoxyResponse;
 
         try {
           const response = await this.router.requestListener(req as MoxyRequest, res as MoxyResponse);
+          /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
           delete this.#responses[(req as MoxyRequest).id];
 
           return response;
         } catch (error) {
           this.#handleUncaughtErrors(error as HttpException, res as MoxyResponse);
         }
-      }
+      },
     );
+    this.server = server;
 
     this.#createConnectionManager();
 
     return new Promise<MoxyHttpServer>((resolve, reject) => {
-      this.server.on('error', reject);
+      server.on('error', reject);
 
-      this.server.listen(port, () => {
+      server.listen(port, () => {
         this.#logger.log(`moxy up :${this.port}`);
 
-        return resolve(this.server);
+        resolve(server);
       });
     });
   }
@@ -263,13 +269,22 @@ export class MoxyServer {
     return new Promise((resolve, reject) => {
       if (!this.server) {
         resolve();
+        return;
       }
 
       if (options?.closeConnections) {
         this.server.emit('closeConnections');
       }
 
-      this.server.close((error) => (error ? reject(error) : resolve((this.server = null))));
+      this.server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        this.server = null;
+
+        resolve();
+      });
     });
   }
 
@@ -295,7 +310,7 @@ export class MoxyServer {
     const currentResponse = this.#responses[res.id];
 
     if (currentResponse && !currentResponse.writableEnded) {
-      if (error?.status) {
+      if (error.status) {
         currentResponse.sendJson({ status: error.status, error: error.message });
       } else {
         currentResponse.sendJson({
@@ -305,6 +320,7 @@ export class MoxyServer {
       }
     }
 
+    /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
     delete this.#responses[res.id];
   }
 
@@ -312,6 +328,10 @@ export class MoxyServer {
    * Configures connection management
    */
   #createConnectionManager(): void {
+    if (!this.server) {
+      return;
+    }
+
     const connections: Record<string, Socket> = {};
 
     this.server.on('connection', (socket) => {
@@ -319,6 +339,7 @@ export class MoxyServer {
       connections[id] = socket;
 
       socket.on('close', () => {
+        /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
         delete connections[id];
       });
     });

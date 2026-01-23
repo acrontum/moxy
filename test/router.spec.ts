@@ -1,20 +1,28 @@
-import { expect } from 'chai';
-import { after, afterEach, before } from 'mocha';
-import { join, relative } from 'path';
-import { default as supertest } from 'supertest';
+import assert from 'node:assert';
+import { join, relative } from 'node:path';
+import { after, afterEach, before, describe, it } from 'node:test';
 import { routeConfig } from '../examples/example-routing/example.routes';
 import { MoxyServer, PathConfig, RequestHandler } from '../src';
+import { getRequest, TestRequest } from './shared/test-util';
 
-describe(relative(process.cwd(), __filename), () => {
+type NetError = {
+  address: string;
+  code: string;
+  errno: number;
+  port: number;
+  syscall: string;
+};
+
+describe(relative(process.cwd(), __filename), async () => {
   const moxy: MoxyServer = new MoxyServer({ logging: 'error' });
-  let request: supertest.SuperTest<supertest.Test>;
+  let request: TestRequest;
 
   before(async () => {
     await moxy.listen();
-    request = supertest(moxy.server);
+    request = getRequest(moxy);
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     moxy.resetRoutes();
   });
 
@@ -22,7 +30,7 @@ describe(relative(process.cwd(), __filename), () => {
     await moxy.close({ closeConnections: true });
   });
 
-  it('can configure routes', async () => {
+  await it('can configure routes', async () => {
     await request.get('/example-routing/12345/measurements/76543').expect(404);
     await request.get('/example-routing/static/image.png').expect(404);
     await request.post('/example-routing/auth/login').expect(404);
@@ -36,7 +44,7 @@ describe(relative(process.cwd(), __filename), () => {
     await request.get('/example-routing/exact/match/handler?ignore=(.*)').expect(404);
 
     // change static file path in exampe from /public/ to /test/
-    expect((routeConfig['/static/(?<file>.*)'] as PathConfig).get).equals('/public/:file');
+    assert.strictEqual((routeConfig['/static/(?<file>.*)'] as PathConfig).get, '/public/:file');
     (routeConfig['/static/(?<file>.*)'] as PathConfig).get = '/test/:file';
 
     // google proxy is slow-ish
@@ -45,7 +53,7 @@ describe(relative(process.cwd(), __filename), () => {
     await proxy.listen();
     after(() => proxy.close({ closeConnections: true }));
 
-    expect(routeConfig['proxied-server(?<path>.*)'] as PathConfig).deep.equals({
+    assert.deepStrictEqual(routeConfig['proxied-server(?<path>.*)'] as PathConfig, {
       proxy: 'https://www.google.com:path',
       proxyOptions: {
         headers: {
@@ -58,8 +66,8 @@ describe(relative(process.cwd(), __filename), () => {
     moxy.onAll('/example-routing', routeConfig);
 
     await request.get('/_moxy/routes').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([
+      assert.strictEqual(status, 200);
+      assert.deepStrictEqual(body, [
         '/example-routing/:machineId/measurements/:measurementId',
         '/example-routing/static/(?<file>.*)',
         '/example-routing/assets/(?<file>.*)',
@@ -76,8 +84,8 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({
+      assert.strictEqual(status, 200);
+      assert.deepStrictEqual(body, {
         '/example-routing/:machineId/measurements/:measurementId': {
           get: {
             status: 200,
@@ -178,15 +186,15 @@ describe(relative(process.cwd(), __filename), () => {
     await request.get('/example-routing/exact/match/handler?ignore=(.*)').expect(200);
   });
 
-  it('can read filesystem for routing', async () => {
+  await it('can read filesystem for routing', async () => {
     await moxy.addRoutesFromFolder(join(__dirname, 'fixtures', 'load-from-dir'));
 
     const serializedDeleteFuntion =
       "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({
+      assert.strictEqual(status, 200);
+      assert.deepStrictEqual(body, {
         '/a/test': { get: { status: 200 } },
         '/a/users/something': { delete: serializedDeleteFuntion },
         '/a/y/test': { get: { status: 200 } },
@@ -225,7 +233,7 @@ describe(relative(process.cwd(), __filename), () => {
     });
   });
 
-  it('can temporarily override a route', async () => {
+  await it('can temporarily override a route', async () => {
     await request.get('/hello/world').expect(404);
 
     moxy.on('/hello/world', {
@@ -236,13 +244,13 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/hello/world').expect(({ status, text }) => {
-      expect(status).equals(200);
-      expect(text).equals('hi!');
+      assert.strictEqual(status, 200);
+      assert.strictEqual(text, 'hi!');
     });
 
     await request.get('/hello/world').expect(({ status, text }) => {
-      expect(status).equals(200);
-      expect(text).equals('hi!');
+      assert.strictEqual(status, 200);
+      assert.strictEqual(text, 'hi!');
     });
 
     await request.post('/hello/world').expect(404);
@@ -255,13 +263,13 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/hello/world').expect(({ status, text }) => {
-      expect(status).equals(200);
-      expect(text).equals('hi!');
+      assert.strictEqual(status, 200);
+      assert.strictEqual(text, 'hi!');
     });
 
     await request.post('/hello/world').expect(({ status, body }) => {
-      expect(status).equals(201);
-      expect(body).deep.equals({ message: 'welcome' });
+      assert.strictEqual(status, 201);
+      assert.deepStrictEqual(body, { message: 'welcome' });
     });
 
     await request.post('/hello/world').expect(404);
@@ -275,13 +283,13 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/hello/world').expect(({ status, text }) => {
-      expect(status).equals(418);
-      expect(text).equals('easteregg');
+      assert.strictEqual(status, 418);
+      assert.strictEqual(text, 'easteregg');
     });
 
     await request.get('/hello/world').expect(({ status, text }) => {
-      expect(status).equals(200);
-      expect(text).equals('hi!');
+      assert.strictEqual(status, 200);
+      assert.strictEqual(text, 'hi!');
     });
 
     moxy.once('/hello/world', { get: { status: 400 } });
@@ -294,7 +302,7 @@ describe(relative(process.cwd(), __filename), () => {
     await request.get('/hello/world').expect(200);
   });
 
-  it('can slow down requests', async () => {
+  await it('can slow down requests', async () => {
     moxy.on('/test', {
       get: { status: 200 },
       post: {
@@ -305,11 +313,11 @@ describe(relative(process.cwd(), __filename), () => {
 
     let start = Date.now();
     await request.get('/test').expect(200);
-    expect(Date.now() - start < 50).equals(true);
+    assert.strictEqual(Date.now() - start < 50, true);
 
     start = Date.now();
     await request.post('/test').expect(201);
-    expect(Date.now() - start >= 50).equals(true);
+    assert.strictEqual(Date.now() - start >= 50, true);
 
     moxy.on('/top-level-delay', {
       delay: 50,
@@ -318,7 +326,7 @@ describe(relative(process.cwd(), __filename), () => {
 
     start = Date.now();
     await request.get('/top-level-delay').expect(200);
-    expect(Date.now() - start >= 50).equals(true);
+    assert.strictEqual(Date.now() - start >= 50, true);
 
     moxy.on('/route-and-method-level-delay', {
       delay: 50,
@@ -331,13 +339,15 @@ describe(relative(process.cwd(), __filename), () => {
 
     start = Date.now();
     await request.post('/route-and-method-level-delay').expect(201);
-    expect(Date.now() - start >= 100).equals(true);
+    assert.strictEqual(Date.now() - start >= 100, true);
   });
 
-  it('can proxy requests to another server', async () => {
+  await it('can proxy requests to another server', async () => {
     const proxyTarget = new MoxyServer({ logging: 'error' });
     await proxyTarget.listen(0);
-    after(async () => await proxyTarget.close({ closeConnections: true }));
+    after(async () => {
+      await proxyTarget.close({ closeConnections: true });
+    });
 
     proxyTarget.on('/this/request/was/proxied', {
       get: {
@@ -354,9 +364,9 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/proxy/this/request/was/proxied').expect(({ status, body, headers }) => {
-      expect(status).equals(418);
-      expect(body).deep.equals({ message: 'Hello!' });
-      expect(headers['x-proxy-responder']).equals('moxy');
+      assert.strictEqual(status, 418);
+      assert.deepStrictEqual(body, { message: 'Hello!' });
+      assert.strictEqual(headers['x-proxy-responder'], 'moxy');
     });
 
     proxyTarget.on('/proxier', {
@@ -379,9 +389,9 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/proxy/proxier').expect(({ status, body, headers }) => {
-      expect(status).equals(418);
-      expect(body).deep.equals({ message: 'Hello!' });
-      expect(headers['x-proxy-responder']).equals('moxy');
+      assert.strictEqual(status, 418);
+      assert.deepStrictEqual(body, { message: 'Hello!' });
+      assert.strictEqual(headers['x-proxy-responder'], 'moxy');
     });
 
     moxy.on('/bad-proxy/(?<proxyPath>.*)', {
@@ -390,14 +400,29 @@ describe(relative(process.cwd(), __filename), () => {
       },
     });
 
-    await request.get('/bad-proxy/proxier').expect(({ status, body, headers }) => {
-      expect(status).equals(502);
-      expect(body.status).equals(502);
-      expect(body.message.code).equals('ECONNREFUSED');
-      expect(headers['x-moxy-error']).equals('proxy error');
-    });
+    await request
+      .get('/bad-proxy/proxier')
+      .expect<{ status: number; message: NetError }>(({ status, body, headers }) => {
+        assert.deepStrictEqual(
+          { status, body },
+          {
+            status: 502,
+            body: {
+              status: 502,
+              message: {
+                code: 'ECONNREFUSED',
+                address: body.message.address,
+                errno: body.message.errno,
+                port: body.message.port,
+                syscall: body.message.syscall,
+              },
+            },
+          },
+        );
+        assert.strictEqual(headers['x-moxy-error'], 'proxy error');
+      });
 
-    let timer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | undefined;
     proxyTarget.on('/slow', {
       get: (_, res) => (timer = setTimeout(() => res.sendJson({ message: 'zzzzzz' }), 1000)),
     });
@@ -411,16 +436,25 @@ describe(relative(process.cwd(), __filename), () => {
       },
     });
 
-    await request.get('/slow-proxy/proxier').expect(({ status, body, headers }) => {
-      expect(status).equals(504);
-      expect(body.message).equals('Proxy timeout');
-      expect(headers['x-moxy-error']).equals('proxy timeout');
+    await request.get('/slow-proxy/proxier').expect<{ options: unknown }>(({ status, body, headers }) => {
+      assert.deepStrictEqual(
+        { status, body },
+        {
+          status: 504,
+          body: {
+            status: 504,
+            message: 'Proxy timeout',
+            options: body.options,
+          },
+        },
+      );
+      assert.strictEqual(headers['x-moxy-error'], 'proxy timeout');
     });
 
     clearTimeout(timer);
   });
 
-  it('can use query and path params', async () => {
+  await it('can use query and path params', async () => {
     // explicit handlers for with and without query string
     moxy.on('/test-params/:tpId\\?search=:search', {
       get: {
@@ -446,16 +480,20 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/test-params/0118')
       .query({ search: 'ambul' })
       .expect(({ status, body }) => {
-        expect(status).equals(401);
-        expect(body).deep.equals([
-          ['tpId', '0118'],
-          ['search', 'ambul'],
-        ]);
+        assert.deepStrictEqual(
+          { status, body },
+          {
+            status: 401,
+            body: [
+              ['tpId', '0118'],
+              ['search', 'ambul'],
+            ],
+          },
+        );
       });
 
     await request.get('/test-params/0118').expect(({ status, body }) => {
-      expect(status).equals(402);
-      expect(body).deep.equals([['tpId', '0118']]);
+      assert.deepStrictEqual({ status, body }, { status: 402, body: [['tpId', '0118']] });
     });
 
     // explicit required query
@@ -478,8 +516,8 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/test-params/0118')
       .query({ search: 'ambul' })
       .expect(({ status, body }) => {
-        expect(status).equals(401);
-        expect(body).deep.equals([
+        assert.strictEqual(status, 401);
+        assert.deepStrictEqual(body, [
           ['tpId', '0118'],
           ['search', 'ambul'],
         ]);
@@ -507,16 +545,21 @@ describe(relative(process.cwd(), __filename), () => {
       .get('/test-params/0118')
       .query({ search: 'ambul' })
       .expect(({ status, body }) => {
-        expect(status).equals(200);
-        expect(body).deep.equals([
-          ['tpId', '0118'],
-          ['search', 'ambul'],
-        ]);
+        assert.deepStrictEqual(
+          { status, body },
+          {
+            status: 200,
+            body: [
+              ['tpId', '0118'],
+              ['search', 'ambul'],
+            ],
+          },
+        );
       });
 
     await request.get('/test-params/0118').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals([
+      assert.strictEqual(status, 200);
+      assert.deepStrictEqual(body, [
         ['tpId', '0118'],
         ['search', ':search'],
       ]);
@@ -527,15 +570,13 @@ describe(relative(process.cwd(), __filename), () => {
     moxy.resetRoutes();
     moxy.on('/moxy.git/info/:refs', handler);
     await request.get('/moxy.git/info/refs?service=git-upload-pack').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ refs: 'refs', service: 'git-upload-pack' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { refs: 'refs', service: 'git-upload-pack' } });
     });
 
     moxy.resetRoutes();
     moxy.on('/moxy.git/info/:refs', handler);
     await request.get('/moxy.git/info/refs?service=git-upload-pack').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ refs: 'refs', service: 'git-upload-pack' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { refs: 'refs', service: 'git-upload-pack' } });
     });
 
     moxy.resetRoutes();
@@ -553,8 +594,7 @@ describe(relative(process.cwd(), __filename), () => {
     moxy.resetRoutes();
     moxy.on('/moxy.git/info/:refs\\?asdf=fdsa', handler);
     await request.get('/moxy.git/info/refs?asdf=fdsa').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ refs: 'refs', asdf: 'fdsa' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { refs: 'refs', asdf: 'fdsa' } });
     });
 
     moxy.resetRoutes();
@@ -584,8 +624,7 @@ describe(relative(process.cwd(), __filename), () => {
     moxy.resetRoutes();
     moxy.on('/test-params/:tpId\\?search=:search', handler);
     await request.get('/test-params/tpid?search=asdf').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ tpId: 'tpid', search: 'asdf' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { tpId: 'tpid', search: 'asdf' } });
     });
 
     moxy.resetRoutes();
@@ -607,26 +646,23 @@ describe(relative(process.cwd(), __filename), () => {
     moxy.resetRoutes();
     moxy.on('/test-params/:tpId', handler);
     await request.get('/test-params/tpid').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ tpId: 'tpid' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { tpId: 'tpid' } });
     });
 
     moxy.resetRoutes();
     moxy.on('/test-params/:tpId', handler);
     await request.get('/test-params/tpid?search').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ tpId: 'tpid', search: '' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { tpId: 'tpid', search: '' } });
     });
 
     moxy.resetRoutes();
     moxy.on('/test-params/:tpId', handler);
     await request.get('/test-params/tpid?search=asdf').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body).deep.equals({ tpId: 'tpid', search: 'asdf' });
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { tpId: 'tpid', search: 'asdf' } });
     });
   });
 
-  it('can disable regex route matching', async () => {
+  await it('can disable regex route matching', async () => {
     await request.get('/route/:ignored/.*').expect(404);
     await request.post('/route/:ignored/.*').expect(404);
     await request.delete('/route/:ignored/.*').expect(404);
@@ -639,7 +675,7 @@ describe(relative(process.cwd(), __filename), () => {
 
     moxy.on('/route/:ignored/.*', {
       exact: true,
-      all: (req, res, vars) => res.sendJson(vars),
+      all: (_req, res, vars) => res.sendJson(vars),
     });
 
     await request.get('/route/:ignored/.*').expect(200);
@@ -663,7 +699,7 @@ describe(relative(process.cwd(), __filename), () => {
     await request.delete('/route/ignored/path').expect(404);
 
     moxy.on('/route/:ignored/.*', {
-      all: (req, res, vars) => res.sendJson(vars),
+      all: (_req, res, vars) => res.sendJson(vars),
     });
 
     await request.get('/route/:ignored/.*').expect(200);
@@ -677,9 +713,9 @@ describe(relative(process.cwd(), __filename), () => {
     await request.delete('/route/ignored/path').expect(200);
   });
 
-  it('can modify server params from handler method', async () => {
+  await it('can modify server params from handler method', async () => {
     moxy.on('/modify-me', {
-      get: (req, res, vars, server) => {
+      get: (_req, res, _vars, server) => {
         server.once('/modify-me', {
           get: {
             status: 418,
@@ -693,16 +729,13 @@ describe(relative(process.cwd(), __filename), () => {
     });
 
     await request.get('/modify-me').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body.message).equals('configured');
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { message: 'configured' } });
     });
     await request.get('/modify-me').expect(({ status, body }) => {
-      expect(status).equals(418);
-      expect(body.message).equals('ok');
+      assert.deepStrictEqual({ status, body }, { status: 418, body: { message: 'ok' } });
     });
     await request.get('/modify-me').expect(({ status, body }) => {
-      expect(status).equals(200);
-      expect(body.message).equals('configured');
+      assert.deepStrictEqual({ status, body }, { status: 200, body: { message: 'configured' } });
     });
   });
-});
+}).catch(console.error);

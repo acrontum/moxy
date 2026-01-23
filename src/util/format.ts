@@ -1,6 +1,7 @@
-import { randomUUID } from 'crypto';
-import { Method, Routes } from '../router';
-import { MoxyRequest, MoxyResponse } from '../server';
+import { randomUUID } from 'node:crypto';
+import { Method, Routes } from '../router/router';
+import { MoxyRequest } from '../server/request';
+import { MoxyResponse } from '../server/response';
 
 export const colours = {
   red: '\x1b[31m',
@@ -26,7 +27,7 @@ export const methodColours: Record<Method, string> = {
 };
 
 export const formatMethod = (method: Method): string =>
-  `${methodColours[method?.toLowerCase?.() as Method]}${method.toUpperCase()}\x1b[0m`;
+  `${methodColours[method.toLowerCase() as Method]}${method.toUpperCase()}\x1b[0m`;
 
 export const formatStatus = (status: number): string => {
   if (status >= 500) {
@@ -47,9 +48,9 @@ export const formatStatus = (status: number): string => {
   return status.toString();
 };
 
-export const formatBody = (body: string | Buffer | Record<string, any>): string | Buffer => {
+export const formatBody = (body: string | Buffer | Record<string, unknown>): string | Buffer => {
   if (typeof body === 'string') {
-    return body?.length > 1500 ? `${body.slice(0, 1000)} ...` : body;
+    return body.length > 1500 ? `${body.slice(0, 1000)} ...` : body;
   }
 
   if (Buffer.isBuffer(body)) {
@@ -58,7 +59,7 @@ export const formatBody = (body: string | Buffer | Record<string, any>): string 
 
   const json = JSON.stringify(body, null, 2);
 
-  return json?.length > 1500 ? `${json.slice(0, 1000)} ...` : json;
+  return json.length > 1500 ? `${json.slice(0, 1000)} ...` : json;
 };
 
 export const formatRouteResponse = (req: MoxyRequest, res: MoxyResponse): string => {
@@ -67,6 +68,7 @@ export const formatRouteResponse = (req: MoxyRequest, res: MoxyResponse): string
     `${colours.teal}${req.url}${colours.none}`,
     '=>',
     formatStatus(res.statusCode),
+    /* eslint-disable-next-line @typescript-eslint/restrict-template-expressions */
     `\n${formatBody(res.body)}`,
   ].join(' ');
 };
@@ -87,4 +89,4 @@ export const formatRoutesForPrinting = (routes: Routes, expandFunction = true): 
 };
 
 export const getId: () => string =
-  typeof randomUUID === 'function' ? randomUUID : () => Math.round(Math.random() * 0xffffffffff).toString(36);
+  typeof randomUUID === 'function' ? randomUUID : (): string => Math.round(Math.random() * 0xffffffffff).toString(36);
