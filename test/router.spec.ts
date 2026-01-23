@@ -30,7 +30,7 @@ describe(relative(process.cwd(), __filename), async () => {
     await moxy.close({ closeConnections: true });
   });
 
-  await it('can configure routes', async () => {
+  await it('can configure routes', async (context) => {
     await request.get('/example-routing/12345/measurements/76543').expect(404);
     await request.get('/example-routing/static/image.png').expect(404);
     await request.post('/example-routing/auth/login').expect(404);
@@ -51,7 +51,7 @@ describe(relative(process.cwd(), __filename), async () => {
     const proxy = new MoxyServer({ logging: 'error' });
     proxy.on('/test\\?q=asdf', { get: { status: 418 } });
     await proxy.listen();
-    after(() => proxy.close({ closeConnections: true }));
+    context.after(() => proxy.close({ closeConnections: true }));
 
     assert.deepStrictEqual(routeConfig['proxied-server(?<path>.*)'] as PathConfig, {
       proxy: 'https://www.google.com:path',
@@ -342,12 +342,10 @@ describe(relative(process.cwd(), __filename), async () => {
     assert.strictEqual(Date.now() - start >= 100, true);
   });
 
-  await it('can proxy requests to another server', async () => {
+  await it('can proxy requests to another server', async (context) => {
     const proxyTarget = new MoxyServer({ logging: 'error' });
     await proxyTarget.listen(0);
-    after(async () => {
-      await proxyTarget.close({ closeConnections: true });
-    });
+    context.after(() => proxyTarget.close({ closeConnections: true }));
 
     proxyTarget.on('/this/request/was/proxied', {
       get: {
@@ -410,11 +408,8 @@ describe(relative(process.cwd(), __filename), async () => {
             body: {
               status: 502,
               message: {
+                ...body.message,
                 code: 'ECONNREFUSED',
-                address: body.message.address,
-                errno: body.message.errno,
-                port: body.message.port,
-                syscall: body.message.syscall,
               },
             },
           },

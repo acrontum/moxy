@@ -13,7 +13,7 @@
     "docs-readme": "npx doctoc --github readme.md && sed -i 's/%5C_/_/g' readme.md",
     "docs-changelog": "npx auto-changelog --output changelog.md --commit-limit false --sort-commits date --hide-empty-releases --ignore-commit-pattern 'acrontum/release' --breaking-pattern 'breaking change: '",
     "lint": "eslint '{src,test}/**/*.{js,ts,json}'",
-    "test": "NODE_ENV=test node --test --require source-map-support/register 'dist/test/**/*.spec.js'",
+    "test": "NODE_ENV=test node --test --require source-map-support/register dist/test/*.spec.js",
     "prepublishOnly": "./githooks/pre-push"
   },
   "bin": {
