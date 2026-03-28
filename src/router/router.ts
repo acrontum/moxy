@@ -10,19 +10,13 @@ import { formatRouteResponse, formatRoutesForPrinting } from '../util/format';
 import { HttpException } from '../util/http-exception';
 import { Logger } from '../util/logger';
 
-/**
- * Path and query params
- */
+/** Path and query params */
 export type HandlerVariables = Record<string, string | string[]>;
 
-/**
- * Common http verbs
- */
+/** Common http verbs */
 export type Method = 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
 
-/**
- * Manual request handler
- */
+/** Manual request handler */
 export type RequestHandler = (
   req: MoxyRequest,
   res: MoxyResponse,
@@ -31,40 +25,24 @@ export type RequestHandler = (
 ) => unknown;
 
 export interface PathSettings {
-  /**
-   * If set, will proxy all requests to the target
-   */
+  /** If set, will proxy all requests to the target */
   proxy?: string;
-  /**
-   * Options to pass through proxy
-   */
+  /** Options to pass through proxy */
   proxyOptions?: https.RequestOptions;
-  /**
-   * Method-level delay (in milliseconds)
-   */
+  /** Method-level delay (in milliseconds) */
   delay?: number;
-  /**
-   * If true, will not parse route as regex
-   */
+  /** If true, will not parse route as regex */
   exact?: true;
 }
 
 export interface MethodSettings extends PathSettings {
-  /**
-   * status code to return (defaults to 200)
-   */
+  /** status code to return (defaults to 200) */
   status?: number;
-  /**
-   * response payload
-   */
+  /** response payload */
   body?: unknown;
-  /**
-   * headers to add (Content-Type is added automatically)
-   */
+  /** headers to add (Content-Type is added automatically) */
   headers?: http.OutgoingHttpHeaders;
-  /**
-   * HTTP request handler function
-   */
+  /** HTTP request handler function */
   handler?: RequestHandler;
 }
 
@@ -89,36 +67,24 @@ export interface MethodSettings extends PathSettings {
  */
 export type MethodConfig = MethodSettings | string | RequestHandler;
 
-/**
- * Configuration for a path.
- */
+/** Configuration for a path. */
 export type PathConfig = PathSettings & { all?: MethodConfig } & { [key in Method]?: MethodConfig };
 
-/**
- * Configuration for a route.
- */
+/** Configuration for a route. */
 export type RouteConfig = string | RequestHandler | PathConfig;
 
-/**
- * Configuration for multiple routes.
- */
+/** Configuration for multiple routes. */
 export type Routes = Record<string, RouteConfig>;
 
 export interface RouterConfig {
-  /**
-   * If true, exposes CRUD routes for path config
-   */
+  /** If true, exposes CRUD routes for path config */
   allowHttpRouteConfig?: boolean;
 }
 
 export interface AddRouteOptions {
-  /**
-   * If true, route is deleted when used
-   */
+  /** If true, route is deleted when used */
   once?: boolean;
-  /**
-   * If true, url is not parsed as regex
-   */
+  /** If true, url is not parsed as regex */
   exact?: boolean;
 }
 
@@ -129,21 +95,13 @@ export interface PathConfigWithOptions extends PathConfig {
 export type ParsedPathConfig = RouteConfig & PathConfigWithOptions;
 
 export class Router {
-  /**
-   * Entries of [router path, ParsedPathConfig]
-   */
+  /** Entries of [router path, ParsedPathConfig] */
   routerPaths: [string, ParsedPathConfig][] = [];
-  /**
-   * Path-keyed router route config object
-   */
+  /** Path-keyed router route config object */
   routes: Record<string, ParsedPathConfig> = {};
-  /**
-   * Entries of [router path, ParsedPathConfig] for single-use routes
-   */
+  /** Entries of [router path, ParsedPathConfig] for single-use routes */
   onceRouterPaths: [string, ParsedPathConfig][] = [];
-  /**
-   * Router config options
-   */
+  /** Router config options */
   options: RouterConfig;
   #logger: Logger;
   #server: MoxyServer;
@@ -406,6 +364,7 @@ export class Router {
 
   /**
    * Handles server request based on path config
+   * Returning null from a handler will continue processing the next handlers
    *
    * @param  {MoxyRequest}   req          The request
    * @param  {MoxyResponse}  res          The resource
@@ -447,12 +406,16 @@ export class Router {
     await this.#delay(routeConfig.delay);
 
     if (typeof routeConfig === 'function') {
-      routeConfig(req, res, variables, this.#server);
+      if (routeConfig(req, res, variables, this.#server) === null) {
+        return null;
+      }
       return res;
     }
 
     if (typeof methodConfig === 'function') {
-      methodConfig(req, res, variables, this.#server);
+      if (methodConfig(req, res, variables, this.#server) == null) {
+        return null;
+      }
       return res;
     }
 

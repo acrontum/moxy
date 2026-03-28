@@ -733,4 +733,82 @@ describe(relative(process.cwd(), __filename), async () => {
       assert.deepStrictEqual({ status, body }, { status: 200, body: { message: 'configured' } });
     });
   });
+
+  await it('can work as middleware when returning null from a route', async () => {
+    moxy
+      .on('/', {
+        all: (_req, res) => {
+          res.setHeader('x-middleware-applied', 'true');
+          res.setHeader('x-middleware-default', 'hello');
+
+          return null;
+        },
+      })
+      .on('/something-else', {
+        get: {
+          status: 200,
+          body: { message: 'and now, for something completely different' },
+          headers: { 'x-header': 'true' },
+        },
+        head: { status: 200, headers: { 'x-middleware-default': 'goodbye' } },
+      });
+
+    await request.get('/').expect(({ status, body, headers }) => {
+      assert.deepStrictEqual(
+        { status, body, headers },
+        {
+          status: 404,
+          body: { message: 'Not found', status: 404 },
+          headers: {
+            'x-middleware-applied': 'true',
+            'x-middleware-default': 'hello',
+            'content-type': 'application/json',
+            'x-moxy-error': 'Route not found',
+            'date': headers.date,
+            'connection': 'close',
+            'transfer-encoding': 'chunked',
+          },
+        },
+      );
+    });
+
+    await request.get('/something-else').expect(({ status, body, headers }) => {
+      assert.deepStrictEqual(
+        { status, body, headers },
+        {
+          status: 200,
+          body: { message: 'and now, for something completely different' },
+          headers: {
+            'x-middleware-applied': 'true',
+            'x-middleware-default': 'hello',
+            'x-header': 'true',
+            'content-type': 'application/json',
+            'x-moxy-error': 'Route not found',
+            'date': headers.date,
+            'connection': 'close',
+            'transfer-encoding': 'chunked',
+          },
+        },
+      );
+    });
+
+    await request.head('/something-else').expect(({ status, body, headers }) => {
+      assert.deepStrictEqual(
+        { status, body, headers },
+        {
+          status: 200,
+          body: {},
+          headers: {
+            'x-middleware-applied': 'true',
+            'x-middleware-default': 'goodbye',
+            'content-type': 'application/json',
+            'x-moxy-error': 'Route not found',
+            'date': headers.date,
+            'connection': 'close',
+            'transfer-encoding': 'chunked',
+          },
+        },
+      );
+    });
+  });
 }).catch(console.error);
