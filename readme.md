@@ -157,8 +157,6 @@ services:
 
 ## Examples (see [the examples folder](./examples))
 
-**note** that examples are in TypeScript for clarity, but moxy is a javascript library so you will need to transpile if you want to use TypeScript.  
-
 
 ### Simple server
 
@@ -781,7 +779,17 @@ See [API](#api) for full usage.
 
 ### From files
 
-Moxy can load routing configs from the filesystem, searching recursively for `.js` or `.json` files matching `<anything>.routes.js(on)`. This allows you to organize routes into files, and put them in a routes folder (as shown in the [example-routing folder](./examples/example-routing/)).
+Moxy can load route configs from a folder, searching recursively for route files. Route files are files who's name matches:
+- `.routes.js`
+- `.routes.json`
+
+For moxy version 5+, and node version v22.18.0+ (or 22+ with `--experimental-strip-types`), routes files can also be module or typescript files:
+- `.routes.mjs`
+- `.routes.mts`
+- `.routes.ts`
+
+
+This allows you to organize routes into files, and put them in a routes folder (as shown in the [example-routing folder](./examples/example-routing/)).  
 
 ```typescript
 await moxy.addRoutesFromFolder('/path/to/routes/folder');
