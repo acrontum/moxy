@@ -1,8 +1,8 @@
 import assert from 'node:assert';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { after, afterEach, before, describe, it } from 'node:test';
 import { routeConfig } from '../examples/example-routing/example.routes';
-import { MoxyServer, PathConfig, RequestHandler } from '../src';
+import { formatRoutesForPrinting, MoxyServer, PathConfig, RequestHandler } from '../src';
 import { getRequest, TestRequest } from './shared/test-util';
 
 type NetError = {
@@ -730,5 +730,53 @@ describe(relative(process.cwd(), __filename), async () => {
     await request.get('/modify-me').expect(({ status, body }) => {
       assert.deepStrictEqual({ status, body }, { status: 200, body: { message: 'configured' } });
     });
+  });
+
+  await it('resolves folder paths', async () => {
+    const routesFolder = join(__dirname, 'fixtures/load-from-dir/a/y');
+    const paths = {
+      routesFolder,
+      relative: relative(process.cwd(), routesFolder),
+      dotRelative: './' + relative(process.cwd(), routesFolder),
+      abs: resolve('./' + relative(process.cwd(), routesFolder)),
+    };
+    assert.deepStrictEqual(paths, {
+      routesFolder: process.cwd() + '/dist/test/fixtures/load-from-dir/a/y',
+      relative: 'dist/test/fixtures/load-from-dir/a/y',
+      dotRelative: './dist/test/fixtures/load-from-dir/a/y',
+      abs: process.cwd() + '/dist/test/fixtures/load-from-dir/a/y',
+    });
+
+    const expectedRoutes = {
+      'test': { get: { status: 200 } },
+      'users/something': {
+        delete: `delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }`,
+      },
+      '/z/test': { get: { status: 200 } },
+      '/z/users/something': {
+        delete: `delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }`,
+      },
+    };
+
+    moxy.resetRoutes();
+    await moxy.addRoutesFromFolder(paths.routesFolder);
+    assert.deepStrictEqual(JSON.parse(formatRoutesForPrinting(moxy.router.routes)), expectedRoutes);
+
+    moxy.resetRoutes();
+    await moxy.addRoutesFromFolder(paths.relative);
+    assert.deepStrictEqual(JSON.parse(formatRoutesForPrinting(moxy.router.routes)), expectedRoutes);
+
+    moxy.resetRoutes();
+    await moxy.addRoutesFromFolder(paths.dotRelative);
+    assert.deepStrictEqual(JSON.parse(formatRoutesForPrinting(moxy.router.routes)), expectedRoutes);
+
+    moxy.resetRoutes();
+    await moxy.addRoutesFromFolder(paths.abs);
+    assert.deepStrictEqual(JSON.parse(formatRoutesForPrinting(moxy.router.routes)), expectedRoutes);
+  });
+
+  await it("shows errors when loading files that don't exist", async () => {
+    await assert.rejects(() => moxy.addRoutesFromFolder('../not-exists/'));
+    await assert.rejects(() => moxy.loadConfigFromFile('../not-exists/file.js', '../not-exists'));
   });
 }).catch(console.error);
