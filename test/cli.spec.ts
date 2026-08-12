@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { join, relative } from 'node:path';
-import { afterEach, describe, it } from 'node:test';
+import { afterEach, before, describe, it } from 'node:test';
 import { formatRoutesForPrinting, main, MoxyServer, RouteConfig } from '../src';
 import { getRequest, TestRequest } from './shared/test-util';
 
@@ -13,6 +13,15 @@ describe(relative(process.cwd(), __filename), async () => {
     await assertions(moxy);
     await moxy.close({ closeConnections: true });
   };
+
+  let supportsTs = false;
+  before(() => {
+    try {
+      /* eslint-disable-next-line @typescript-eslint/no-require-imports */
+      require(join(process.cwd(), 'test/fixtures/ts-support.ts'));
+      supportsTs = true;
+    } catch (_e) {}
+  });
 
   afterEach(async () => {
     await moxy.close({ closeConnections: true });
@@ -61,10 +70,9 @@ describe(relative(process.cwd(), __filename), async () => {
     await assert.rejects(main(['-p', 'a1']), /Error: invalid port a1/);
   });
 
-  await it('can load routes on config', async () => {
+  await it('can load routes from folder', async () => {
     const routes = join(__dirname, 'fixtures', 'load-from-dir');
-    const serializedDeleteFuntion =
-      "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
+    const serializedDeleteFuntion = "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
 
     await start(['-q', '-r', routes], (server) => {
       const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes)) as unknown;
@@ -98,6 +106,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },
@@ -139,6 +148,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },
@@ -180,6 +190,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },
@@ -225,6 +236,68 @@ describe(relative(process.cwd(), __filename), async () => {
           post: { status: 101 },
         },
       });
+    });
+  });
+
+  await it('can load ts routes from folder', async () => {
+    const routes = join(__dirname, '../../test/fixtures/load-from-dir');
+    const serializedDeleteFuntion = "delete(req     , res     ) {\n      return res.writeHead(301, 'google.ca');\n    }";
+
+    await start(['-q', '-r', routes], (server) => {
+      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes)) as unknown;
+
+      if (!supportsTs) {
+        assert.deepStrictEqual(routerConfig, {
+          '/b/json-b-test': { get: { status: 200 } },
+          '/b/json-b-test/users/something': {
+            delete: {
+              status: 405,
+              body: '<!DOCTYPE html><html><head><title>Nope</title></head><body><h1>405 Method not allowed</h1></body><html>',
+              headers: { 'Content-Type': 'text/html' },
+            },
+          },
+          '/c/mjs/': { get: { status: 200 } },
+        });
+      } else {
+        assert.deepStrictEqual(routerConfig, {
+          '/a/test': { get: { status: 200 } },
+          '/a/users/something': { delete: serializedDeleteFuntion },
+          '/a/y/test': { get: { status: 200 } },
+          '/a/y/users/something': { delete: serializedDeleteFuntion },
+          '/a/y/z/test': { get: { status: 200 } },
+          '/a/y/z/users/something': { delete: serializedDeleteFuntion },
+          '/b/json-b-test': {
+            get: {
+              status: 200,
+            },
+          },
+          '/b/json-b-test/users/something': {
+            delete: {
+              body: '<!DOCTYPE html><html><head><title>Nope</title></head><body><h1>405 Method not allowed</h1></body><html>',
+              headers: {
+                'Content-Type': 'text/html',
+              },
+              status: 405,
+            },
+          },
+          '/b/test': { get: { status: 200 } },
+          '/b/users/something': { delete: serializedDeleteFuntion },
+          '/b/x/test': { get: { status: 200 } },
+          '/b/x/users/something': { delete: serializedDeleteFuntion },
+          '/b/y/test': { get: { status: 200 } },
+          '/b/y/users/something': { delete: serializedDeleteFuntion },
+          '/b/y/z/test': { get: { status: 200 } },
+          '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+          '/c/mjs/': { get: { status: 200 } },
+          '/c/mts/': { get: { status: 200 } },
+          '/c/test': { get: { status: 200 } },
+          '/c/users/something': { delete: serializedDeleteFuntion },
+          '/c/x/test': { get: { status: 200 } },
+          '/c/x/users/something': { delete: serializedDeleteFuntion },
+          '/c/x/z/test': { get: { status: 200 } },
+          '/c/x/z/users/something': { delete: serializedDeleteFuntion },
+        });
+      }
     });
   });
 }).catch(console.error);

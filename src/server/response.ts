@@ -118,10 +118,7 @@ export class MoxyResponse extends ServerResponse<MoxyRequest> {
    * @param {Record<string, string | readonly string[] | number>}  headers  The headers
    */
   setHeaders(
-    headers:
-      | Headers
-      | Map<string, number | string | readonly string[]>
-      | Record<string, string | readonly string[] | number>,
+    headers: Headers | Map<string, number | string | readonly string[]> | Record<string, string | readonly string[] | number>,
   ): this {
     for (const [name, value] of Object.entries(headers) as [string, number | string | readonly string[]][]) {
       this.setHeader(name, value);

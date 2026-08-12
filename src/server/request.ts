@@ -78,7 +78,7 @@ export class MoxyRequest extends IncomingMessage {
     const payload = await this.body;
 
     if (format === 'string') {
-      return (payload.toString('utf8') as string | null) ?? '';
+      return payload.toString('utf8');
     }
 
     if (format === 'json') {
