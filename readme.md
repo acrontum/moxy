@@ -903,6 +903,7 @@ Returns the list of api methods:
 {
   "GET /router?once=false&serializeMethods=true": "show router",
   "GET /routes?once=false": "show router routes",
+  "GET /health": "Return 200 OK if healthy",
   // below are only available with '--allow-http-config'
   "POST /routes?once=false": "create route",
   "PUT /routes/:route": "create or update route",
@@ -911,6 +912,11 @@ Returns the list of api methods:
 }
 
 ```
+
+
+#### GET /\_moxy/health
+
+Returns 200 OK if healthy, without logging (added in 5.1.0).  
 
 
 #### GET /\_moxy/routes

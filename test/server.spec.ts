@@ -57,6 +57,24 @@ describe(relative(process.cwd(), __filename), async () => {
     });
   });
 
+  await it('GET /_moxy/health - responds to a healthcheck', async () => {
+    await request.get('/_moxy/health').expect(({ status, text, headers }) => {
+      assert.deepStrictEqual(
+        { status, text, headers },
+        {
+          status: 200,
+          text: 'OK',
+          headers: {
+            'content-type': 'text/plain',
+            'date': headers.date,
+            'connection': 'close',
+            'transfer-encoding': 'chunked',
+          },
+        },
+      );
+    });
+  });
+
   await it('GET /_moxy/routes - can list available routes', async () => {
     await request.get('/_moxy/routes').expect(({ status, body }) => {
       assert.deepStrictEqual({ status, body }, { status: 200, body: [] });
