@@ -63,6 +63,7 @@ then manually remove %5C from the routes
   - [CLI options](#cli-options)
   - [HTTP API](#http-api)
     - [GET /\_moxy:](#get-_moxy)
+    - [GET /\_moxy/health](#get-_moxyhealth)
     - [GET /\_moxy/routes](#get-_moxyroutes)
     - [GET /\_moxy/router](#get-_moxyrouter)
     - [POST /\_moxy/router](#post-_moxyrouter)
