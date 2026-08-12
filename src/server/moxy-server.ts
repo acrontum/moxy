@@ -161,7 +161,7 @@ export class MoxyServer {
       }
 
       if (this.#isRouterFile(next.name)) {
-        this.loadConfigFromFile(next.name, path);
+        await this.loadConfigFromFile(next.name, path);
       }
     }
 
@@ -193,9 +193,19 @@ export class MoxyServer {
    * @param {string}  filePath  The file path
    * @param {string}  basePath  The base path
    */
-  loadConfigFromFile(filePath: string, basePath: string): void {
-    /* eslint-disable-next-line @typescript-eslint/no-require-imports */
-    let pathConfig = require(filePath) as Record<string, Routes>;
+  async loadConfigFromFile(filePath: string, basePath: string): Promise<void> {
+    let pathConfig: Record<string, Routes>;
+
+    try {
+      /* eslint-disable-next-line @typescript-eslint/no-require-imports */
+      pathConfig = require(filePath) as Record<string, Routes>;
+    } catch (_requireError) {
+      try {
+        pathConfig = (await import(filePath)) as Record<string, Routes>;
+      } catch (_importError) {
+        return;
+      }
+    }
     const prefix = filePath.replace(`/${basename(filePath)}`, '').replace(basePath, '');
 
     if (filePath.endsWith('.json')) {
@@ -247,7 +257,7 @@ export class MoxyServer {
 
     this.#createConnectionManager();
 
-    return new Promise<MoxyHttpServer>((resolve, reject) => {
+    return await new Promise<MoxyHttpServer>((resolve, reject) => {
       server.on('error', reject);
 
       server.listen(port, () => {

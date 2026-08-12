@@ -53,7 +53,7 @@ describe(relative(process.cwd(), __filename), async () => {
     await proxy.listen();
     context.after(() => proxy.close({ closeConnections: true }));
 
-    assert.deepStrictEqual(routeConfig['proxied-server(?<path>.*)'] as PathConfig, {
+    assert.deepStrictEqual(routeConfig['proxied-server(?<path>.*)'], {
       proxy: 'https://www.google.com:path',
       proxyOptions: {
         headers: {
@@ -189,8 +189,7 @@ describe(relative(process.cwd(), __filename), async () => {
   await it('can read filesystem for routing', async () => {
     await moxy.addRoutesFromFolder(join(__dirname, 'fixtures', 'load-from-dir'));
 
-    const serializedDeleteFuntion =
-      "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
+    const serializedDeleteFuntion = "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
 
     await request.get('/_moxy/router').expect(({ status, body }) => {
       assert.strictEqual(status, 200);
@@ -399,24 +398,22 @@ describe(relative(process.cwd(), __filename), async () => {
       },
     });
 
-    await request
-      .get('/bad-proxy/proxier')
-      .expect<{ status: number; message: NetError }>(({ status, body, headers }) => {
-        assert.deepStrictEqual(
-          { status, body },
-          {
+    await request.get('/bad-proxy/proxier').expect<{ status: number; message: NetError }>(({ status, body, headers }) => {
+      assert.deepStrictEqual(
+        { status, body },
+        {
+          status: 502,
+          body: {
             status: 502,
-            body: {
-              status: 502,
-              message: {
-                ...body.message,
-                code: 'ECONNREFUSED',
-              },
+            message: {
+              ...body.message,
+              code: 'ECONNREFUSED',
             },
           },
-        );
-        assert.strictEqual(headers['x-moxy-error'], 'proxy error');
-      });
+        },
+      );
+      assert.strictEqual(headers['x-moxy-error'], 'proxy error');
+    });
 
     let timer: NodeJS.Timeout | undefined;
     proxyTarget.on('/slow', {
