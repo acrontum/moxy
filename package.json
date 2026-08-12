@@ -3,6 +3,10 @@
   "version": "6.0.0",
   "description": "Simple, configurable part mock part proxy",
   "main": "dist/src/index.js",
+  "exports": {
+    "import": "./dist/src/cli.mjs",
+    "require": "./dist/src/cli.js"
+  },
   "scripts": {
     "build": "rm -rf dist/* && tsc",
     "setup": "git config core.hooksPath ./githooks",
