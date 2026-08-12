@@ -296,7 +296,7 @@ export class MoxyServer {
    * @return {boolean}
    */
   #isRouterFile(path: string): boolean {
-    return /\.routes\.js(on)?$/.test(path);
+    return /\.routes\.(mts|mjs|js|ts|json)$/.test(path);
   }
 
   /**

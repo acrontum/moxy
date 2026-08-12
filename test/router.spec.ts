@@ -223,6 +223,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },

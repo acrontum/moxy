@@ -61,7 +61,7 @@ describe(relative(process.cwd(), __filename), async () => {
     await assert.rejects(main(['-p', 'a1']), /Error: invalid port a1/);
   });
 
-  await it('can load routes on config', async () => {
+  await it('can load routes from folder', async () => {
     const routes = join(__dirname, 'fixtures', 'load-from-dir');
     const serializedDeleteFuntion =
       "delete(req, res) {\n            return res.writeHead(301, 'google.ca');\n        }";
@@ -98,6 +98,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },
@@ -139,6 +140,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },
@@ -180,6 +182,7 @@ describe(relative(process.cwd(), __filename), async () => {
         '/b/y/users/something': { delete: serializedDeleteFuntion },
         '/b/y/z/test': { get: { status: 200 } },
         '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mts/': { get: { status: 200 } },
         '/c/test': { get: { status: 200 } },
         '/c/users/something': { delete: serializedDeleteFuntion },
         '/c/x/test': { get: { status: 200 } },
@@ -224,6 +227,55 @@ describe(relative(process.cwd(), __filename), async () => {
           urlRegex: /^\/some\/other\/path(\?.*)?$/g,
           post: { status: 101 },
         },
+      });
+    });
+  });
+
+  await it('can load ts routes from folder', async () => {
+    const routes = join(__dirname, '../../test/fixtures/load-from-dir');
+    const serializedDeleteFuntion =
+      "delete(req     , res     ) {\n      return res.writeHead(301, 'google.ca');\n    }";
+
+    await start(['-q', '-r', routes], (server) => {
+      const routerConfig = JSON.parse(formatRoutesForPrinting(server.router.routes)) as unknown;
+
+      assert.deepStrictEqual(routerConfig, {
+        '/a/test': { get: { status: 200 } },
+        '/a/users/something': { delete: serializedDeleteFuntion },
+        '/a/y/test': { get: { status: 200 } },
+        '/a/y/users/something': { delete: serializedDeleteFuntion },
+        '/a/y/z/test': { get: { status: 200 } },
+        '/a/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/b/json-b-test': {
+          get: {
+            status: 200,
+          },
+        },
+        '/b/json-b-test/users/something': {
+          delete: {
+            body: '<!DOCTYPE html><html><head><title>Nope</title></head><body><h1>405 Method not allowed</h1></body><html>',
+            headers: {
+              'Content-Type': 'text/html',
+            },
+            status: 405,
+          },
+        },
+        '/b/test': { get: { status: 200 } },
+        '/b/users/something': { delete: serializedDeleteFuntion },
+        '/b/x/test': { get: { status: 200 } },
+        '/b/x/users/something': { delete: serializedDeleteFuntion },
+        '/b/y/test': { get: { status: 200 } },
+        '/b/y/users/something': { delete: serializedDeleteFuntion },
+        '/b/y/z/test': { get: { status: 200 } },
+        '/b/y/z/users/something': { delete: serializedDeleteFuntion },
+        '/c/mjs/': { get: { status: 200 } },
+        '/c/mts/': { get: { status: 200 } },
+        '/c/test': { get: { status: 200 } },
+        '/c/users/something': { delete: serializedDeleteFuntion },
+        '/c/x/test': { get: { status: 200 } },
+        '/c/x/users/something': { delete: serializedDeleteFuntion },
+        '/c/x/z/test': { get: { status: 200 } },
+        '/c/x/z/users/something': { delete: serializedDeleteFuntion },
       });
     });
   });
