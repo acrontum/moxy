@@ -244,6 +244,10 @@ export class MoxyServer {
       options,
       /* eslint-disable-next-line @typescript-eslint/no-misused-promises */
       async (req: IncomingMessage, res: ServerResponse): Promise<unknown> => {
+        if (req.url === '/_moxy/health') {
+          return res.writeHead(200, 'OK', { 'content-type': 'text/plain' }).end('OK');
+        }
+
         this.#responses[(req as MoxyRequest).id] = res as MoxyResponse;
 
         try {
