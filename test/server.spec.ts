@@ -8,15 +8,17 @@ const basicRouteConfig: RouteConfig = { post: { status: 418, body: { message: '0
 const updatedRouteConfig: RouteConfig = { delete: { status: 418, body: { message: '0xC0FFEE' } } };
 const publicRouteResponse = {
   'GET /routes?once=false': 'show router routes',
+  'GET /router?once=false&serializeMethods=true': 'show router',
+  'GET /health': 'Return 200 OK if healthy',
   'POST /routes?once=false': 'create route',
   'PUT /routes/:route': 'create or replace route',
   'PATCH /routes/:route': 'update route',
   'DELETE /routes/:route': 'delete route',
-  'GET /router?once=false&serializeMethods=true': 'show router',
 };
 const privateRouteResponse = {
   'GET /routes?once=false': 'show router routes',
   'GET /router?once=false&serializeMethods=true': 'show router',
+  'GET /health': 'Return 200 OK if healthy',
 };
 
 describe(relative(process.cwd(), __filename), async () => {

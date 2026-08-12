@@ -45,6 +45,7 @@ describe(relative(process.cwd(), __filename), async () => {
       assert.deepStrictEqual(body, {
         'GET /routes?once=false': 'show router routes',
         'GET /router?once=false&serializeMethods=true': 'show router',
+        'GET /health': 'Return 200 OK if healthy',
       });
     });
 
