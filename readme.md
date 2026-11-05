@@ -16,8 +16,10 @@ Simple, configurable mock / proxy server with 0 dependencies.
     <img alt="Github latest tag acrontum/moxy" src="https://img.shields.io/github/v/tag/acrontum/moxy">
   </a>
 
-  [![install size](https://packagephobia.com/badge?p=@acrontum/moxy)](https://packagephobia.com/result?p=@acrontum/moxy)
-
+  <a href="https://packagephobia.com/result?p=@acrontum/moxy" alt="npm install size">
+    <img alt="npm install size" src="https://badgen.net/packagephobia/install/@acrontum/moxy">
+  </a>
+  
   <br />
 
   <a href="https://github.com/acrontum/moxy/actions/workflows/build-node.yml" alt="CI status (node workflow)">
