@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import { access } from 'node:fs/promises';
 import { createServer, IncomingMessage, Server, ServerOptions, ServerResponse } from 'node:http';
 import { AddressInfo, Socket } from 'node:net';
 import { basename, join, resolve } from 'node:path';
@@ -8,7 +9,6 @@ import { HttpException } from '../util/http-exception';
 import { Logger, LogLevel } from '../util/logger';
 import { MoxyRequest } from './request';
 import { MoxyResponse } from './response';
-import { access } from 'node:fs/promises';
 
 export interface ServerConfig {
   /**
@@ -19,13 +19,6 @@ export interface ServerConfig {
    * Configuration passed to router
    */
   router?: RouterConfig;
-}
-
-export interface CloseServerOptions {
-  /**
-   * If true, will force close all sockets
-   */
-  closeConnections?: boolean;
 }
 
 export type MoxyHttpServer = Server<typeof MoxyRequest, typeof MoxyResponse>;
@@ -42,6 +35,7 @@ export class MoxyServer {
 
   #responses: { [key in string]?: MoxyResponse };
   #logger: Logger;
+  #connections: Record<string, Socket & { close: () => Promise<void> }> = {};
 
   constructor(config?: ServerConfig) {
     this.#logger = new Logger((process.env.MOXY_LOG as LogLevel | undefined) || config?.logging || 'verbose');
@@ -270,7 +264,6 @@ export class MoxyServer {
 
       server.listen(port, () => {
         this.#logger.log(`moxy up :${this.port}`);
-
         resolve(server);
       });
     });
@@ -279,31 +272,34 @@ export class MoxyServer {
   /**
    * Close the HTTP server
    *
-   * @param  {CloseServerOptions}  options  Close server options
-   *
    * @return {Promise<void>}
    */
-  close(options?: CloseServerOptions): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.server) {
-        resolve();
+  async close(): Promise<void> {
+    let resolve: (value?: unknown) => void = () => ({});
+    let reject: (error?: unknown) => void = () => ({});
+    const serverClosed = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+
+    if (!this.server) {
+      resolve();
+      return;
+    }
+
+    await Promise.all(Object.values(this.#connections).map((sock) => sock.close()));
+
+    this.server.close((error) => {
+      if (error) {
+        reject(error);
         return;
       }
+      this.server = null;
 
-      if (options?.closeConnections) {
-        this.server.emit('closeConnections');
-      }
-
-      this.server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        this.server = null;
-
-        resolve();
-      });
+      resolve();
     });
+
+    await serverClosed;
   }
 
   /**
@@ -350,21 +346,30 @@ export class MoxyServer {
       return;
     }
 
-    const connections: Record<string, Socket> = {};
-
     this.server.on('connection', (socket) => {
       const id = getId();
-      connections[id] = socket;
+      this.#connections[id] = socket as Socket & { close: () => Promise<void> };
+
+      this.#connections[id].close = (): Promise<void> => {
+        return new Promise((resolve) => {
+          socket.on('close', () => {
+            /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
+            delete this.#connections[id];
+            resolve();
+          });
+          this.#connections[id].destroy();
+        });
+      };
 
       socket.on('close', () => {
         /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete */
-        delete connections[id];
+        delete this.#connections[id];
       });
     });
 
     this.server.on('closeConnections', () => {
-      for (const id in connections) {
-        connections[id].destroy();
+      for (const id in this.#connections) {
+        this.#connections[id].destroy();
       }
     });
   }

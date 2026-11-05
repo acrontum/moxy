@@ -609,16 +609,18 @@ export class Router {
       return res.sendJson({
         'GET /routes?once=false': 'show router routes',
         'GET /router?once=false&serializeMethods=true': 'show router',
+        'GET /health': 'Return 200 OK if healthy',
       });
     }
 
     return res.sendJson({
       'GET /routes?once=false': 'show router routes',
+      'GET /router?once=false&serializeMethods=true': 'show router',
+      'GET /health': 'Return 200 OK if healthy',
       'POST /routes?once=false': 'create route',
       'PUT /routes/:route': 'create or replace route',
       'PATCH /routes/:route': 'update route',
       'DELETE /routes/:route': 'delete route',
-      'GET /router?once=false&serializeMethods=true': 'show router',
     });
   }
 
