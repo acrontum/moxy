@@ -11,7 +11,7 @@ describe(relative(process.cwd(), __filename), async () => {
   const start = async (argv: string[], assertions: (moxy: MoxyServer) => unknown): Promise<void> => {
     moxy = await main(argv);
     await assertions(moxy);
-    await moxy.close({ closeConnections: true });
+    await moxy.close();
   };
 
   let supportsTs = false;
@@ -24,7 +24,7 @@ describe(relative(process.cwd(), __filename), async () => {
   });
 
   afterEach(async () => {
-    await moxy.close({ closeConnections: true });
+    await moxy.close();
   });
 
   await it('can start a server', async () => {
@@ -49,7 +49,7 @@ describe(relative(process.cwd(), __filename), async () => {
       });
     });
 
-    await moxy.close({ closeConnections: true });
+    await moxy.close();
 
     await start(['-q'], (server) => {
       assert.strictEqual(server.logLevel, 'error');

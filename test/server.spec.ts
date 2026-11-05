@@ -44,7 +44,7 @@ describe(relative(process.cwd(), __filename), async () => {
   });
 
   after(async () => {
-    await moxy.close({ closeConnections: true });
+    await moxy.close();
   });
 
   await it('GET /_moxy - reports api routes', async () => {
@@ -437,7 +437,7 @@ describe(relative(process.cwd(), __filename), async () => {
     const nonExposedServer = new MoxyServer({ logging: 'error', router: { allowHttpRouteConfig: false } });
     await nonExposedServer.listen(0);
     after(async () => {
-      await nonExposedServer.close({ closeConnections: true });
+      await nonExposedServer.close();
     });
 
     request = getRequest(nonExposedServer);

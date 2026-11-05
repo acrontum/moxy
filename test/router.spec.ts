@@ -27,7 +27,7 @@ describe(relative(process.cwd(), __filename), async () => {
   });
 
   after(async () => {
-    await moxy.close({ closeConnections: true });
+    await moxy.close();
   });
 
   await it('can configure routes', async (context) => {
@@ -51,7 +51,7 @@ describe(relative(process.cwd(), __filename), async () => {
     const proxy = new MoxyServer({ logging: 'error' });
     proxy.on('/test\\?q=asdf', { get: { status: 418 } });
     await proxy.listen();
-    context.after(() => proxy.close({ closeConnections: true }));
+    context.after(() => proxy.close());
 
     assert.deepStrictEqual(routeConfig['proxied-server(?<path>.*)'], {
       proxy: 'https://www.google.com:path',
@@ -345,7 +345,7 @@ describe(relative(process.cwd(), __filename), async () => {
   await it('can proxy requests to another server', async (context) => {
     const proxyTarget = new MoxyServer({ logging: 'error' });
     await proxyTarget.listen(0);
-    context.after(() => proxyTarget.close({ closeConnections: true }));
+    context.after(() => proxyTarget.close());
 
     proxyTarget.on('/this/request/was/proxied', {
       get: {
