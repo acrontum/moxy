@@ -1,12 +1,10 @@
 {
   "name": "@acrontum/moxy",
-  "version": "5.1.0",
+  "version": "6.0.0",
   "description": "Simple, configurable part mock part proxy",
   "main": "dist/src/index.js",
   "scripts": {
-    "prebuild": "rm -rf dist/*",
-    "build": "tsc",
-    "postbuild": "tsc -p ./tsconfig.defs.json",
+    "build": "rm -rf dist/* && tsc",
     "setup": "git config core.hooksPath ./githooks",
     "docs": "npm run docs-api && npm run docs-readme && npm run docs-changelog",
     "docs-api": "typedoc --readme none --excludeExternals --excludePrivate --out docs --gitRevision main src/index.ts",
