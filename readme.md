@@ -263,8 +263,8 @@ moxy.on('/users/:userId/profile-picture', '/static/images/:userId.png');
 
 // ... make requests against moxy
 
-// stop the server. closeConnections: true will close any active connections immediately instead of waiting for them.
-await moxy.close({ closeConnections: true });
+// stop the server - will abort any pending connections
+await moxy.close();
 ```
 
 
@@ -302,7 +302,7 @@ describe('API auth', () => {
   });
 
   after(async () => {
-    await moxy.close({ closeConnections: true });
+    await moxy.close();
     await MyApplication.stop();
   });
 
